@@ -1,0 +1,142 @@
+{
+  "swagger": "2.0",
+  "paths": {
+    "/image/{token}/{size}": {
+      "get": {
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "images"
+        ],
+        "summary": "Convert DRACOON rsource.",
+        "operationId": "getImage",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/UpdateUserResponse"
+          },
+          "400": {
+            "description": "__Bad Request__\n\n ⦁ [-303]: Invalid ID\n ⦁ [-309]: Negative number\n ⦁ [-310]: Negative or zero number\n ⦁ [-311]: Empty string\n ⦁ [-312]: Too long string\n ⦁ [-313]: Invalid date\n ⦁ [-317]: Invalid username\n ⦁ [-318]: Invalid password",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "__Unauthorized__\n\n ⦁ [-101]: Invalid authentication data\n ⦁ [-102]: Invalid credentials",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "__Forbidden__\n\n ⦁ [-202]: No right to update user",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "__Not Found__\n\n ⦁ [-409]: User not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "__Conflict__\n\n ⦁ [-410]: User already exists",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "412": {
+            "description": "__Precondition Failed__\n\n ⦁ [-103]: User not activated",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "head": {
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "description": "Only entries a user can see are returned.\n\n# Filtering\n\nThe result can be filtered via following fields:\n field name  | operators             | data type / allowed values |\n ----------- | --------------------- | -------------------------- |\n userId      | eq (equal)            | int                        |\n typeId      | eq (equal)            | int                        |\n startTime   | bt (between)          | datetime strings           |\n activityId  | i (is), eq (equal)    | null, int                  |\n description | i (is), cn (contains) | null, string               |\n\u0026#9432; Filters are connected via logical conjunction (AND).\n\n__Filter Syntax:__\n[field name];[operator];[value-1];...;[value-n]\n\n__Example:__\nGet entries for a specific time interval: startTime;bt;2019-01-01T00:00:00;2019-01-05T00:00:00\n\n# Sorting\n\nThe result can be sorted via following fields:\n field name | operators  |\n ---------- | ---------- |\n startTime  | asc / desc |\n\u0026#9432; Sorting by multiple fields is not supported.\n\n__Sort Syntax:__\n[field name];[operator]\n\n__Example:__\nSort entries descending by their date: date;desc",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "entries"
+        ],
+        "summary": "Lists all entries.",
+        "operationId": "listEntries",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Filtering applied to the entries result.",
+            "name": "filter",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Sorting applied to the entries result.",
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "Start of the entries result page.",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "Size of the entries result page. (default=50)",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/GetEntriesResponse"
+          },
+          "400": {
+            "description": "__Bad Request__\n\n ⦁ [-302]: Invalid page number\n ⦁ [-304]: Invalid filter\n ⦁ [-305]: Invalid sort\n ⦁ [-306]: Invalid offset\n ⦁ [-307]: Invalid limit",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "__Unauthorized__\n\n ⦁ [-101]: Invalid authentication data\n ⦁ [-102]: Invalid credentials",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "__Forbidden__\n\n ⦁ [-207]: No right to get entries of other users",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "412": {
+            "description": "__Precondition Failed__\n\n ⦁ [-103]: User not activated",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  }
+}

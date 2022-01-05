@@ -1,0 +1,31 @@
+---
+log:
+  level: debug
+data:
+  s3:
+    access-key-id:
+    address:
+    bucket:
+    region:
+    secret-access-key:
+http:
+  port: 8085
+  gzip:
+    enabled: true
+  origin:
+    all:
+      enabled: true
+rabbitmq:
+  addresses: localhost:5672
+  username: guest
+  password: guest
+  virtual-host: /
+service:
+  core:
+    protocol: http
+    host: localhost
+    port: 8080
+  internal:
+    communication:
+      auth:
+        token: abcd
