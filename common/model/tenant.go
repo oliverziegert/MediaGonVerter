@@ -1,0 +1,64 @@
+package model
+
+import (
+	"fmt"
+	error2 "pc-ziegert.de/media_service/common/error"
+	"pc-ziegert.de/media_service/common/log"
+	"strconv"
+)
+
+type TenantState uint8
+
+func (ts TenantState) UInt8() uint8 {
+	return uint8(ts)
+}
+
+const (
+	TenantStateUnknown TenantState = iota
+	TenantStateValid
+	TenantStateInvalid
+)
+
+type Tenant struct {
+	TenantUuid  string      `json:"tenantUuid,omitempty"`
+	TenantState TenantState `json:"tenantState,omitempty"`
+}
+
+func NewTenant(tenantUuid string) *Tenant {
+	return &Tenant{
+		TenantUuid:  tenantUuid,
+		TenantState: TenantStateUnknown,
+	}
+}
+
+func (t *Tenant) GetKeyString() string {
+	return t.TenantUuid
+}
+
+func (t *Tenant) GetValueMap() map[string]string {
+	valueMap := make(map[string]string)
+	valueMap["tenantState"] = fmt.Sprintf("%d", t.TenantState)
+	return valueMap
+}
+
+func (t *Tenant) MapToTenant(valueMap map[string]string) *error2.Error {
+	ts, err := stringToTenantState(valueMap["tenantState"])
+	if err != nil {
+		err := error2.WrapError(error2.ValIdInvalid, "", err)
+		log.Debug(err.StackTrace())
+		return err
+	}
+	t.TenantState = *ts
+	return nil
+}
+
+func stringToTenantState(s string) (*TenantState, *error2.Error) {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		err := error2.WrapError(error2.ValIdInvalid, "stringToTenantState failed", err)
+		log.Debug(err.StackTrace())
+		return nil, err
+	}
+	ts := TenantState(i)
+	return &ts, nil
+}

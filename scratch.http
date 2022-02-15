@@ -1,0 +1,9 @@
+GET http://localhost:8080/mediaserver/image/Y2xvdWQucGMtemllZ2VydC5kZQ==.NHw3NzY4N3w5MDAxNWQ1N2VlYzcwOTQ1NDNjZTYxNmE0Y2FmZmY3NTEwN2IyZWRlMzFjYjNmNzlkNDRmYzE0OTNjYTlhMGYz/64x64?crop=true
+Accept: application/json
+Authorization: Bearer nG7E1Nj9Hj5sJgbH77KAok2cNC8WBoYr
+X-Forwarded-Proto: https
+Host: cloud.pc-ziegert.de
+X-Forwarded-Host: cloud.pc-ziegert.de
+X-Dracoon-Forwarded-Port: 443
+X-Forwarded-For: 192.168.2.24
+#X-Dracoon-Client-User-Agent: MacOSx

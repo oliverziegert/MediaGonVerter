@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"pc-ziegert.de/media_service/config"
-	"pc-ziegert.de/media_service/constant"
-	"pc-ziegert.de/media_service/log"
+	"pc-ziegert.de/media_service/common/config"
+	"pc-ziegert.de/media_service/common/constant"
+	"pc-ziegert.de/media_service/common/log"
+	"pc-ziegert.de/media_service/service"
 	"syscall"
 	"time"
 )
@@ -26,13 +27,19 @@ func main() {
 	log.Infof("Start Media Service %s.", constant.AppVersion)
 
 	// Create initializer
-	init := NewInitializer(conf)
+	init := service.NewInitializer(conf)
+
+	// Open RabbitMQ connection
+	// create Exchange and routing keys
+	mq := init.GetRabbitMQ()
+	mq.OpenRabbitmq()
+	defer mq.CloseRabbitmq()
+	mq.Configure()
 
 	// Open and create/update database
-	// db := init.GetDb()
-	// db.OpenDb()
-	// defer db.CloseDb()
-	// db.UpdateDb()
+	redis := init.GetRedis()
+	redis.NewClient()
+	defer redis.CloseClient()
 
 	// Schedule jobs
 	init.GetJobService().ScheduleJobs()
@@ -41,7 +48,7 @@ func main() {
 	router := gin.Default()
 
 	// Set release mode for router
-	if init.conf.Log.Level != "debug" {
+	if init.GetConfig().Log.Level != "debug" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -59,7 +66,7 @@ func main() {
 
 	// Create server
 	server := &http.Server{
-		Addr:           fmt.Sprintf(":%d", init.conf.HTTP.Port),
+		Addr:           fmt.Sprintf(":%d", init.GetConfig().HTTP.Port),
 		Handler:        router,
 		ReadTimeout:    time.Second * 10,
 		WriteTimeout:   time.Second * 10,
@@ -69,7 +76,7 @@ func main() {
 	// Start HTTP server
 	go func() {
 		// service connections
-		log.Infof("start server: :%d", init.conf.HTTP.Port)
+		log.Infof("start server: :%d", init.GetConfig().HTTP.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s", err)
 		}
@@ -98,8 +105,8 @@ func main() {
 	log.Info("Server exiting")
 }
 
-func configureRouter(init *Initializer, router *gin.Engine) {
-	if init.conf.HTTP.Gzip.Enabled {
+func configureRouter(init *service.Initializer, router *gin.Engine) {
+	if init.GetConfig().HTTP.Gzip.Enabled {
 		router.Use(gzip.Gzip(gzip.BestCompression))
 	}
 	// CORS for https://foo.com and https://github.com origins, allowing:
@@ -108,12 +115,12 @@ func configureRouter(init *Initializer, router *gin.Engine) {
 	// - Credentials share
 	// - Preflight requests cached for 12 hours
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = init.conf.HTTP.Origin.All.Enabled
+	corsConfig.AllowAllOrigins = init.GetConfig().HTTP.Origin.All.Enabled
 	//corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
 	router.Use(cors.New(corsConfig))
 }
 
-func configureApiRouting(init *Initializer, router *gin.Engine) {
+func configureApiRouting(init *service.Initializer, router *gin.Engine) {
 	// Create API sub route
 	ar := router.Group(constant.ApiPath)
 
