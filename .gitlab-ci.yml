@@ -55,13 +55,14 @@ deploy:
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - cat /kaniko/.docker/config.json
     - export TAG=$(cat ${CI_PROJECT_DIR}/VERSION)
     - >-
       /kaniko/executor
       --force
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile.service"
-      --destination "${CI_REGISTRY_IMAGE}-service:${CI_COMMIT_TAG}"
+      --destination "${CI_REGISTRY_IMAGE}-service:${TAG}"
     - >-
       /kaniko/executor
       --force
