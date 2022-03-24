@@ -39,11 +39,11 @@ compile:
     - format
   script:
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media_service $CI_PROJECT_DIR/media_service.go
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/worker $CI_PROJECT_DIR/worker.go
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media_worker $CI_PROJECT_DIR/worker.go
   artifacts:
     paths:
       - media_service
-      - worker
+      - media_worker
 
 deploy:
   stage: deploy

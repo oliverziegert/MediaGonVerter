@@ -3,7 +3,7 @@ FROM alpine:3.15.2
 # We'll likely need to add SSL root certificates
 RUN apk --no-cache add ca-certificates
 
-ADD worker /usr/local/bin/worker
+ADD media_worker /usr/local/bin/worker
 
 WORKDIR /usr/local/bin
 
