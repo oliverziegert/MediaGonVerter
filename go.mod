@@ -1,9 +1,8 @@
 module pc-ziegert.de/media_service
 
-go 1.17
+go 1.18
 
 require (
-	github.com/antihax/optional v1.0.0
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/aws/aws-sdk-go-v2 v1.13.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
