@@ -6,7 +6,6 @@ import (
 	"pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/log"
 	"pc-ziegert.de/media_service/service/db/repo"
-	"time"
 )
 
 type Redis struct {
@@ -80,11 +79,7 @@ func (r *Redis) CloseClient() {
 // GetImageRepo provides the ImageRepo.
 func (r *Redis) GetImageRepo() *repo.ImageRepo {
 	if r.iRepo == nil {
-		ex, err := time.ParseDuration(r.config.Data.Expiration)
-		if err != nil {
-			//ToDo: Error handling
-		}
-		r.iRepo = repo.NewImageRepo(r.rdb, ex)
+		r.iRepo = repo.NewImageRepo(r.rdb, r.config.Data.ExpirationDuration)
 	}
 	return r.iRepo
 }

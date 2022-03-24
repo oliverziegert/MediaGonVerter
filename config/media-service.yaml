@@ -1,0 +1,43 @@
+---
+auth:
+  jwt:
+    public-key: -----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAr8/w4kOI/F+zMxix6NT4\nDYm3lhpLaBko7SCHrRgqJ20lOuotIpOrYfKAnoHtERoPJgh3uUiiw7HBVAAH4CWe\nr3JMLWvGkXONtTNCaRGsvcIq1b6ddoXEwoQoSvZY3zSfDiexPOPBtQdn/vmISOeQ\nxrBigy2bd8qSv5yRXj3CIGGXLLJnHgKiCYVEmDvAglmyRn7viyDi7d7k+/Ia8GRo\nLWbPhVc4LJ0VdGqwYHqKOLOMR9u2g7pcqzVjMYR0PHNk10e8cbyck1tUkswTh8vt\ntjQbj/r30egO6uIjbPQCtbn5+hNRK9v8evMCFaKthMoxnONaNqpRqaQ7peteAjsV\n6pGFj8HvqXUHIzatbkCaxrVaGJ1Imy0Q/dz6PTReow/UAIVi/m3obScmlsXJNpAx\nDUTPw/yyPZ+HWaB+FykUCJAMD//eLuBZEbs+1HD5dgMkwD1LXi2DH5/ccNPnBs01\nUWJvwU53s5robcwP3USD923/XepOxZavO+VX/chjFv0JDmkPwmVWNAiCQnqPOXv8\nK3bebiRzyGAjpx+M/iv5/g2DD0NwA+4m+JR8wroH8AGvvdknVm0efg+87GzQ80+Y\nyge+aWR6qBz5EE2nGrDWkZkdHqKjx1yybzIKvo8oMGApzJivSQAMnAIx0uSm5p0D\npqhZVuCRQLjFysEaFJ/ySWMCAwEAAQ==\n-----END PUBLIC KEY-----
+log:
+  level: debug
+data:
+  s3:
+    access-key-id: aSYjmtCiCq$nZ@t@AY9tH%$#!Bg6Gr3i
+    address: https://s3.pc-ziegert.de
+    bucket: cloud
+    region: eu-central-1
+    secret-access-key: HVdSZHn#K&KT&ZLo8g*ubjaitdsigHE4
+  expiration: 24h #168h #7d Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+http:
+  port: 8084
+  gzip:
+    enabled: true
+  origin:
+    all:
+      enabled: true
+rabbitmq:
+  ip: localhost
+  port: 5672
+  username: guest
+  password: guest
+  virtual-host: /
+redis:
+  network: tcp
+  ip: localhost
+  port: 6379
+  username: ''
+  password: ''
+  db: 0
+service:
+  core:
+    protocol: http
+    host: localhost
+    port: 8081
+  internal:
+    communication:
+      auth:
+        token: KhYD2JVNgZzgoSxmtWAA^@csX^3DJ7oq

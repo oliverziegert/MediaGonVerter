@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 const (
 	AppVersion string = "1.0.0"
 
@@ -42,8 +44,15 @@ const (
 	RabbitMQMediaServiceRoutingKey = "mediaservice"
 	RabbitMQQueueWorkerName        = "pc-ziegert.mediaservice.worker"
 	RabbitMQQueueMediaServiceName  = "pc-ziegert.mediaservice.mediaservice"
+	RabbitMQImageMessageType       = "mediaService.image"
 
-	S3KeyTemplate = "%d/%v/%v/imgcache/%019d-%dx%d"
+	S3KeyTemplate = "%d/%v/%v/imgcache/%019d-%dx%d-%t"
 
 	JWTIssuer = "dracoon auth service"
+
+	TenantBackoffDuration        = time.Second * 2
+	TenantMaxDuration            = time.Second * 15
+	TenantInitialBackoffDuration = time.Second * 1
+
+	ImageInitialExpiration = time.Second * 10
 )

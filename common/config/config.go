@@ -4,7 +4,9 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"pc-ziegert.de/media_service/common/constant"
+	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
+	"time"
 )
 
 type Config struct {
@@ -26,7 +28,8 @@ type Config struct {
 			Region          string `yaml:"region"`
 			SecretAccessKey string `yaml:"secret-access-key"`
 		} `yaml:"s3"`
-		Expiration string `yaml:"expiration"`
+		Expiration         string        `yaml:"expiration"`
+		ExpirationDuration time.Duration `yaml:"-"`
 	} `yaml:"data"`
 
 	HTTP struct {
@@ -79,6 +82,14 @@ type Config struct {
 func LoadConfig() *Config {
 	var conf Config
 	readFile(&conf, constant.ConfigFileName)
+
+	ex, err := time.ParseDuration(conf.Data.Expiration)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "", err)
+		log.Fatalf(err.StackTrace())
+	}
+	conf.Data.ExpirationDuration = ex
+
 	return &conf
 }
 

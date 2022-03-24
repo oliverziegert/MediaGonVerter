@@ -3,120 +3,208 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	error2 "pc-ziegert.de/media_service/common/error"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
 	"pc-ziegert.de/media_service/service/utils"
 	"strconv"
 	"strings"
+	"time"
 )
 
-type ImageState uint8
+type ConversionState uint8
 
-func (is ImageState) Uint() uint8 {
+func (is ConversionState) Uint() uint8 {
 	return uint8(is)
 }
 
 const (
-	ImageStateUnknown ImageState = iota
-	ImageStateDownloading
-	ImageStateConverting
-	ImageStateCached
-	ImageStateConversionError
+	ConversionStateUnknown ConversionState = iota
+	ConversionStateCached
+	ConversionStateConversionError
 )
 
 type Conversion struct {
-	Width       uint64 `json:"width,omitempty"`
-	Height      uint64 `json:"height,omitempty"`
-	Crop        bool   `json:"crop,omitempty"`
-	S3UploadUrl string `json:"s3UploadUrl,omitempty"`
+	Width       uint64                   `json:"width,omitempty"`
+	Height      uint64                   `json:"height,omitempty"`
+	Crop        bool                     `json:"crop,omitempty"`
+	S3UploadUrl *v4.PresignedHTTPRequest `json:"s3UploadUrl,omitempty"`
+	State       ConversionState          `json:"state,omitempty"`
+	Expires     *time.Time               `json:"expires,omitempty"`
 }
 
 type Image struct {
-	TenantId      string        `json:"tenantUuid,omitempty"`
+	TenantUuid    string        `json:"tenantUuid,omitempty"`
 	NodeId        uint64        `json:"nodeId,omitempty"`
 	ServiceName   string        `json:"serviceName,omitempty"`
 	NodeType      string        `json:"nodeType,omitempty"`
 	S3DownloadUrl string        `json:"s3DownloadUrl,omitempty"`
 	NodeSize      uint64        `json:"nodeSize,omitempty"`
-	State         ImageState    `json:"state,omitempty"`
 	Conversions   []*Conversion `json:"conversions,omitempty"`
 }
 
-func NewImage(tenantId string, nodeId uint64) *Image {
+func NewConversion(width uint64, height uint64, crop bool) *Conversion {
+	e := time.Unix(0, 0)
+	return &Conversion{
+		Width:       width,
+		Height:      height,
+		Crop:        crop,
+		S3UploadUrl: nil,
+		State:       ConversionStateUnknown,
+		Expires:     &e,
+	}
+}
+
+func NewImage(tenantUuid string, nodeId uint64) *Image {
 	return &Image{
-		TenantId: tenantId,
-		NodeId:   nodeId,
-		State:    ImageStateUnknown,
+		TenantUuid: tenantUuid,
+		NodeId:     nodeId,
 	}
 }
 
 func (i *Image) GetKeyString() string {
-	return fmt.Sprintf("%s:%d", i.TenantId, i.NodeId)
+	return fmt.Sprintf("%s:%d", i.TenantUuid, i.NodeId)
 }
 
 func (i *Image) GetValueMap() map[string]string {
 	valueMap := make(map[string]string)
-	valueMap["ServiceName"] = i.ServiceName
-	valueMap["NodeType"] = i.NodeType
-	valueMap["S3DownloadUrl"] = i.S3DownloadUrl
-	valueMap["NodeSize"] = fmt.Sprintf("%d", i.NodeSize)
-	valueMap["State"] = fmt.Sprintf("%d", i.State.Uint())
-	for _, conversion := range i.Conversions {
-		key := fmt.Sprintf("conversion-%dx%d-%t", conversion.Height, conversion.Width, conversion.Crop)
-		value := fmt.Sprintf("%s", conversion.S3UploadUrl)
-		valueMap[key] = value
+	i.GetValueMapForValue(&valueMap, "serviceName")
+	i.GetValueMapForValue(&valueMap, "nodeType")
+	i.GetValueMapForValue(&valueMap, "nodeSize")
+	for _, c := range i.Conversions {
+		c.GetValueMap(&valueMap)
 	}
 	return valueMap
 }
 
-func (i *Image) MapToImage(valueMap map[string]string) error {
+func (i *Image) GetValueMapForValue(valueMap *map[string]string, filed string) {
+	vm := *valueMap
+	switch filed {
+	case "serviceName":
+		vm["serviceName"] = i.ServiceName
+	case "nodeType":
+		vm["nodeType"] = i.NodeType
+	case "nodeSize":
+		vm["nodeSize"] = fmt.Sprintf("%d", i.NodeSize)
+	}
+}
+
+func (i *Image) MapToImage(valueMap map[string]string) *e.Error {
 	var err error
 
-	i.ServiceName = valueMap["ServiceName"]
-	i.NodeType = valueMap["NodeType"]
-	i.S3DownloadUrl = valueMap["S3DownloadUrl"]
-	if i.NodeSize, err = strconv.ParseUint(valueMap["NodeSize"], 10, 64); err != nil {
+	i.ServiceName = valueMap["serviceName"]
+	i.NodeType = valueMap["nodeType"]
+	if i.NodeSize, err = strconv.ParseUint(valueMap["nodeSize"], 10, 64); err != nil {
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		log.Debug(err.StackTrace())
 		return err
 	}
-	if i.State, err = stringToImageState(valueMap["State"]); err != nil {
-		return err
-	}
+
+	i.Conversions = []*Conversion{}
 	for k, v := range valueMap {
 		if strings.HasPrefix(k, "conversion-") {
 			var conversion = Conversion{}
-			conversion.S3UploadUrl = v
-			ks := strings.Split(k, "-")
-			conversion.Crop = utils.StringToBool(ks[2])
-			size := strings.Split(ks[1], "x")
+			kt := strings.TrimLeft(k, "conversion-")
+
+			ks := strings.Split(kt, "-")
+			if len(ks) != 2 {
+				err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
+				log.Debug(err.StackTrace())
+				return err
+			}
+			conversion.Crop = utils.StringToBool(ks[1])
+
+			size := strings.Split(ks[0], "x")
 			conversion.Height = utils.StringToUint64(size[0])
 			conversion.Width = utils.StringToUint64(size[1])
+
+			vs := strings.Split(v, "-")
+			if len(vs) != 2 {
+				err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
+				log.Debug(err.StackTrace())
+				return err
+			}
+
+			cs, err := stringToConversionState(vs[0])
+			if err != nil {
+				err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+				log.Debug(err.StackTrace())
+				return err
+			}
+			conversion.State = *cs
+
+			ce, err := stringToConversionExpires(vs[1])
+			if err != nil {
+				err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+				log.Debug(err.StackTrace())
+				return err
+			}
+			conversion.Expires = ce
+
 			i.Conversions = append(i.Conversions, &conversion)
 		}
 	}
 	return nil
 }
 
-func (i *Image) JSON() ([]byte, *error2.Error) {
+func (i *Image) JSON() ([]byte, *e.Error) {
 	j, err := json.Marshal(i)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return nil, err
 	}
 	return j, nil
 }
 
-func (i *Image) JsonToImage(j []byte) *error2.Error {
+func (i *Image) JsonToImage(j []byte) *e.Error {
 	err := json.Unmarshal(j, i)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 	return nil
 }
 
-func stringToImageState(s string) (ImageState, error) {
+func (i *Image) GetConversionBySize(width uint64, height uint64, crop bool) (*Conversion, *e.Error) {
+	for _, conversion := range i.Conversions {
+		if conversion.Crop == crop &&
+			conversion.Width == width &&
+			conversion.Height == height {
+			return conversion, nil
+		}
+	}
+	err := e.NewError(e.ValIdInvalid, "No conversion found")
+	log.Debug(err.StackTrace())
+	return nil, err
+}
+
+func stringToConversionState(s string) (*ConversionState, *e.Error) {
 	i, err := strconv.Atoi(s)
-	return ImageState(i), err
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "", err)
+		log.Debug(err.StackTrace())
+		return nil, err
+	}
+	cs := ConversionState(i)
+	return &cs, nil
+}
+
+func stringToConversionExpires(s string) (*time.Time, *e.Error) {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "", err)
+		log.Debug(err.StackTrace())
+		return nil, err
+	}
+	t := time.Unix(int64(i), 0)
+	return &t, nil
+}
+
+func (c *Conversion) GetValueMap(valueMap *map[string]string) {
+	vm := *valueMap
+	key := fmt.Sprintf("conversion-%dx%d-%t", c.Height, c.Width, c.Crop)
+	value := fmt.Sprintf("%d-%d", c.State, c.Expires.Unix())
+	vm[key] = value
 }

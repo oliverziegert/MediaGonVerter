@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	error2 "pc-ziegert.de/media_service/common/error"
+	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
 	"strconv"
 )
@@ -15,7 +15,6 @@ func (ts TenantState) UInt8() uint8 {
 
 const (
 	TenantStateUnknown TenantState = iota
-	TenantStateValid
 	TenantStateInvalid
 )
 
@@ -41,10 +40,10 @@ func (t *Tenant) GetValueMap() map[string]string {
 	return valueMap
 }
 
-func (t *Tenant) MapToTenant(valueMap map[string]string) *error2.Error {
+func (t *Tenant) MapToTenant(valueMap map[string]string) *e.Error {
 	ts, err := stringToTenantState(valueMap["tenantState"])
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "", err)
+		err := e.WrapError(e.ValIdInvalid, "", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -52,10 +51,10 @@ func (t *Tenant) MapToTenant(valueMap map[string]string) *error2.Error {
 	return nil
 }
 
-func stringToTenantState(s string) (*TenantState, *error2.Error) {
+func stringToTenantState(s string) (*TenantState, *e.Error) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "stringToTenantState failed", err)
+		err := e.WrapError(e.ValIdInvalid, "stringToTenantState failed", err)
 		log.Debug(err.StackTrace())
 		return nil, err
 	}

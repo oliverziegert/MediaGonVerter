@@ -1,9 +1,0 @@
-# NotificationConfigList
-
-## Properties
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**Items** | [**[]NotificationConfig**](NotificationConfig.md) | List of notification configurations | [default to null]
-
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-

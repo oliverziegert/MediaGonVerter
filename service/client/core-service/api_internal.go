@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	error2 "pc-ziegert.de/media_service/common/error"
-	model2 "pc-ziegert.de/media_service/common/model"
+	e "pc-ziegert.de/media_service/common/error"
+	"pc-ziegert.de/media_service/common/log"
+	m "pc-ziegert.de/media_service/common/model"
 	"strings"
 )
 
@@ -31,13 +32,13 @@ type MediaDecryptTokenOpts struct {
 	XSdsServiceToken string
 }
 
-func (i *InternalApiService) MediaDecryptToken(ctx *gin.Context, token string, localVarOptionals *MediaDecryptTokenOpts) (model2.MediaDecryptedToken, *http.Response, error) {
+func (i *InternalApiService) MediaDecryptToken(ctx *gin.Context, token string, localVarOptionals *MediaDecryptTokenOpts) (*m.MediaDecryptedToken, *e.Error) {
 	var (
 		localVarHttpMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue model2.MediaDecryptedToken
+		localVarReturnValue m.MediaDecryptedToken
 	)
 	// create path and map variables
 	localVarPath := i.client.cfg.BasePath + "/v4/internal/media/decrypt/{token}"
@@ -64,87 +65,66 @@ func (i *InternalApiService) MediaDecryptToken(ctx *gin.Context, token string, l
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	if localVarOptionals != nil && localVarOptionals.XSdsServiceToken != "" {
-		localVarHeaderParams["X-Sds-Service-Token"] = parameterToString(localVarOptionals.XSdsServiceToken, "")
-	} else {
-		return localVarReturnValue, nil, error2.NewError(error2.AuthCredentialsInvalid, "XSdsServiceToken must be provided")
+	if localVarOptionals == nil || localVarOptionals.XSdsServiceToken == "" {
+		return &localVarReturnValue, e.NewError(e.AuthCredentialsInvalid, "XSdsServiceToken must be provided")
 	}
+
+	localVarHeaderParams["X-Sds-Service-Token"] = parameterToString(localVarOptionals.XSdsServiceToken, "")
+
 	r, err := i.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	localVarHttpResponse, err := i.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
 		// If we succeed, return the data, otherwise pass on to decode error.
 		err = i.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-		if err == nil {
-			return localVarReturnValue, localVarHttpResponse, err
+		if err != nil {
+			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+			log.Debug(err.StackTrace())
+			return &localVarReturnValue, err
 		}
+		return &localVarReturnValue, nil
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericSwaggerError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-		if localVarHttpResponse.StatusCode == 406 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 412 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 401 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
+		err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
-	return localVarReturnValue, localVarHttpResponse, nil
+	return &localVarReturnValue, nil
 }
 
-type FilesFileIDDownloadsOpts struct {
+type FilesFileIdDownloadsOpts struct {
 	XDcInternalServiceToken string
+	UserId                  uint64
 }
 
-func (i *InternalApiService) FilesFileIDDownloads(ctx *gin.Context, fileId uint64, localVarOptionals *FilesFileIDDownloadsOpts) (model2.FilesFileIDDownloads, *http.Response, error) {
+func (i *InternalApiService) FilesFileIDDownloads(ctx *gin.Context, fileId uint64, localVarOptionals *FilesFileIdDownloadsOpts) (*m.FilesFileIDDownloads, *e.Error) {
 	var (
 		localVarHttpMethod  = http.MethodPost
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue model2.FilesFileIDDownloads
+		localVarReturnValue m.FilesFileIDDownloads
 	)
 	// create path and map variables
 	localVarPath := i.client.cfg.BasePath + "/v4/internal/files/{file_id}/downloads"
@@ -171,72 +151,54 @@ func (i *InternalApiService) FilesFileIDDownloads(ctx *gin.Context, fileId uint6
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	if localVarOptionals != nil && localVarOptionals.XDcInternalServiceToken != "" {
-		localVarHeaderParams["X-DC-Internal-Service-Token"] = parameterToString(localVarOptionals.XDcInternalServiceToken, "")
-	} else {
-		return localVarReturnValue, nil, error2.NewError(error2.AuthCredentialsInvalid, "XDcInternalServiceToken must be provided")
+	if localVarOptionals == nil {
+		return &localVarReturnValue, e.NewError(e.AuthCredentialsInvalid, "FilesFileIdDownloadsOpts must be provided")
 	}
+	if localVarOptionals.XDcInternalServiceToken == "" {
+		return &localVarReturnValue, e.NewError(e.AuthCredentialsInvalid, "XDcInternalServiceToken must be provided")
+	}
+	localVarHeaderParams["X-DC-Internal-Service-Token"] = parameterToString(localVarOptionals.XDcInternalServiceToken, "")
+
+	if localVarOptionals.UserId > 0 {
+		uis := fmt.Sprintf("%d", localVarOptionals.UserId)
+		localVarQueryParams.Add("user_id", uis)
+	}
+
 	r, err := i.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		err := e.WrapError(e.ValIdInvalid, fmt.Sprintf("Tenant invalid"), err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	localVarHttpResponse, err := i.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		err := e.WrapError(e.ValIdInvalid, fmt.Sprintf("Tenant invalid"), err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		err := e.WrapError(e.ValIdInvalid, fmt.Sprintf("Tenant invalid"), err)
+		log.Debug(err.StackTrace())
+		return &localVarReturnValue, err
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
 		// If we succeed, return the data, otherwise pass on to decode error.
 		err = i.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-		if err == nil {
-			return localVarReturnValue, localVarHttpResponse, err
+		if err != nil {
+			err := e.WrapError(e.ValIdInvalid, fmt.Sprintf("Tenant invalid"), err)
+			log.Debug(err.StackTrace())
+			return &localVarReturnValue, err
 		}
+		return &localVarReturnValue, nil
 	}
 
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericSwaggerError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-		if localVarHttpResponse.StatusCode == 406 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 412 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 401 {
-			var v model2.ErrorResponse
-			err = i.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
+	newErr := e.NewError(e.ValIdInvalid, fmt.Sprintf("Unexpected status code"))
+	log.Debug(newErr.StackTrace())
+	return &localVarReturnValue, newErr
 
-	return localVarReturnValue, localVarHttpResponse, nil
 }

@@ -3,16 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/streadway/amqp"
 	"net/http"
 	"os"
 	"os/signal"
 	"pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/constant"
-	"pc-ziegert.de/media_service/common/log"
-	"pc-ziegert.de/media_service/service"
+	e "pc-ziegert.de/media_service/common/error"
+	l "pc-ziegert.de/media_service/common/log"
+	s "pc-ziegert.de/media_service/service"
+	"pc-ziegert.de/media_service/service/mq"
+	"pc-ziegert.de/media_service/service/utils"
 	"syscall"
 	"time"
 )
@@ -22,51 +24,57 @@ func main() {
 	conf := config.LoadConfig()
 
 	// Set logging level
-	log.SetLevel(conf.Log.Level)
+	l.SetLevel(conf.Log.Level)
 
-	log.Infof("Start Media Service %s.", constant.AppVersion)
+	l.Infof("Start Media Service %s.", constant.AppVersion)
 
 	// Create initializer
-	init := service.NewInitializer(conf)
+	i := s.NewInitializer(conf)
 
 	// Open RabbitMQ connection
 	// create Exchange and routing keys
-	mq := init.GetRabbitMQ()
+	mq := i.GetRabbitMQ()
 	mq.OpenRabbitmq()
 	defer mq.CloseRabbitmq()
 	mq.Configure()
 
 	// Open and create/update database
-	redis := init.GetRedis()
+	redis := i.GetRedis()
 	redis.NewClient()
 	defer redis.CloseClient()
 
 	// Schedule jobs
-	init.GetJobService().ScheduleJobs()
+	i.GetJobService().ScheduleJobs()
 
 	// Create router
 	router := gin.Default()
 
 	// Set release mode for router
-	if init.GetConfig().Log.Level != "debug" {
+	if i.GetConfig().Log.Level != "debug" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// configure router
-	configureRouter(init, router)
+	s.ConfigureRouter(i, router)
 
 	// Add Root handlers
-	addRootHandlers(router)
+	s.AddRootHandlers(router)
+
+	// Add probe handlers
+	s.AddProbeHandlers(i, router)
+
+	// Add probe handlers
+	s.AddMetricsHandlers(i, router)
 
 	// Add Swagger UI handlers
-	addSwaggerUiHandlers(router)
+	s.AddSwaggerUiHandlers(router)
 
 	// Configure API routing
-	configureApiRouting(init, router)
+	s.ConfigureApiRouting(i, router)
 
 	// Create server
 	server := &http.Server{
-		Addr:           fmt.Sprintf(":%d", init.GetConfig().HTTP.Port),
+		Addr:           fmt.Sprintf(":%d", i.GetConfig().HTTP.Port),
 		Handler:        router,
 		ReadTimeout:    time.Second * 10,
 		WriteTimeout:   time.Second * 10,
@@ -75,12 +83,19 @@ func main() {
 
 	// Start HTTP server
 	go func() {
-		// service connections
-		log.Infof("start server: :%d", init.GetConfig().HTTP.Port)
+		// s connections
+		l.Infof("start server: :%d", i.GetConfig().HTTP.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s", err)
+			l.Fatalf("listen: %s", err)
 		}
 	}()
+	msgs, err := consume(mq)
+	if err != nil {
+		l.Error("Can not consume queue")
+	}
+
+	rabServ := i.GetRabbitMqService()
+	go rabServ.Consumer(msgs)
 
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 5 seconds.
@@ -90,63 +105,30 @@ func main() {
 	// kill -9 is syscall. SIGKILL but can"t be catch, so don't need add it
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Info("Shutdown Server ...")
+	l.Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown:", err)
+		l.Fatalf("Server Shutdown:", err)
 	}
 	// catching ctx.Done(). timeout of 5 seconds.
 	select {
 	case <-ctx.Done():
-		log.Info("timeout of 5 seconds.")
+		l.Info("timeout of 5 seconds.")
 	}
-	log.Info("Server exiting")
+	l.Info("Server exiting")
 }
 
-func configureRouter(init *service.Initializer, router *gin.Engine) {
-	if init.GetConfig().HTTP.Gzip.Enabled {
-		router.Use(gzip.Gzip(gzip.BestCompression))
-	}
-	// CORS for https://foo.com and https://github.com origins, allowing:
-	// - PUT and PATCH methods
-	// - Origin header
-	// - Credentials share
-	// - Preflight requests cached for 12 hours
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = init.GetConfig().HTTP.Origin.All.Enabled
-	//corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
-	router.Use(cors.New(corsConfig))
-}
-
-func configureApiRouting(init *service.Initializer, router *gin.Engine) {
-	// Create API sub route
-	ar := router.Group(constant.ApiPath)
-
-	// Create protected middleware route
-	ar.Use(init.GetTransactionApiMiddleware().ServeHTTP())
-	ar.Use(init.GetErrorApiMiddleware().ServeHTTP())
-	ar.Use(init.GetSecurityApiMiddleware().ServeHTTP())
-	ar.Use(init.GetAuthCheckApiMiddleware().ServeHTTP())
-
-	// Get controllers
-	imgCtrl := init.GetImageApiController()
-
-	// Add protected endpoints
-	ar.GET("/image/:token/:size", imgCtrl.GetImageHandler())
-	ar.HEAD("/image/:token/:size", imgCtrl.HeadImageHandler())
-}
-
-func addSwaggerUiHandlers(router *gin.Engine) {
-	router.GET(constant.ApiPath, func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, fmt.Sprintf("%s/swagger-ui/index.html", constant.ApiPath))
-	})
-	router.StaticFS(fmt.Sprintf("%s/swagger-ui/", constant.ApiPath), http.Dir("./swagger-ui"))
-}
-
-func addRootHandlers(router *gin.Engine) {
-	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, constant.ApiPath)
-	})
+func consume(r *mq.RabbitMQ) (<-chan amqp.Delivery, *e.Error) {
+	h := utils.GetHostname()
+	return r.Consume(
+		constant.RabbitMQQueueMediaServiceName,
+		*h,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
 }

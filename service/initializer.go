@@ -1,12 +1,14 @@
 package service
 
 import (
+	"math/rand"
 	"pc-ziegert.de/media_service/common/config"
 	ac "pc-ziegert.de/media_service/service/api/controller"
 	am "pc-ziegert.de/media_service/service/api/middleware"
 	"pc-ziegert.de/media_service/service/db"
 	"pc-ziegert.de/media_service/service/mq"
 	"pc-ziegert.de/media_service/service/service"
+	"time"
 )
 
 // Initializer initializes application components.
@@ -16,34 +18,39 @@ type Initializer struct {
 	mq    *mq.RabbitMQ
 	redis *db.Redis
 
-	jobServ    *service.JobService
-	imageServ  *service.ImageService
-	jwtServ    *service.JWTService
-	tenantServ *service.TenantService
+	jobServ *service.JobService
+	imgServ *service.ImageService
+	jwtServ *service.JWTService
+	tenServ *service.TenantService
+	rabServ *service.RabbitMqService
 
-	imageACtrl *ac.ImageController
+	imgACtrl *ac.ImageController
+	prbACtrl *ac.ProbeController
+	metACtrl *ac.MetricsController
 
-	traAMdw  *am.TransactionMiddleware
-	errAMdw  *am.ErrorMiddleware
-	secAMdw  *am.SecurityMiddleware
-	authAMdw *am.AuthCheckMiddleware
+	traAMdw   *am.TransactionMiddleware
+	errAMdw   *am.ErrorMiddleware
+	secAMdw   *am.SecurityMiddleware
+	authAMdw  *am.AuthCheckMiddleware
+	tokenAMdw *am.TokenCheckMiddleware
 }
 
 // NewInitializer creates a new initializer.
 func NewInitializer(conf *config.Config) *Initializer {
+	rand.Seed(time.Now().UnixNano())
 	return &Initializer{conf: conf}
 }
 
 // --- Config functions ---
 
-// GetConfig returns a initialized config object.
+// GetConfig returns an initialized config object.
 func (i *Initializer) GetConfig() *config.Config {
 	return i.conf
 }
 
 // --- RabbitMQ functions ---
 
-// GetRabbitMQ returns a initialized RabbitMQ object.
+// GetRabbitMQ returns an initialized RabbitMQ object.
 func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 	if i.mq == nil {
 		i.mq = mq.NewRabbtmq(i.conf)
@@ -53,7 +60,7 @@ func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 
 // --- Database functions ---
 
-// GetRedis returns a initialized Redis object.
+// GetRedis returns an initialized Redis object.
 func (i *Initializer) GetRedis() *db.Redis {
 	if i.redis == nil {
 		i.redis = db.NewReddis(i.conf)
@@ -63,26 +70,26 @@ func (i *Initializer) GetRedis() *db.Redis {
 
 // --- Service functions ---
 
-// GetJobService returns a initialized job service object
-func (init *Initializer) GetJobService() *service.JobService {
-	if init.jobServ == nil {
-		init.jobServ = service.NewJobService()
+// GetJobService returns an initialized job service object
+func (i *Initializer) GetJobService() *service.JobService {
+	if i.jobServ == nil {
+		i.jobServ = service.NewJobService()
 	}
-	return init.jobServ
+	return i.jobServ
 }
 
-// GetImageService returns a initialized image service object.
+// GetImageService returns an initialized image service object.
 func (i *Initializer) GetImageService() *service.ImageService {
-	if i.imageServ == nil {
-		i.imageServ = service.NewImageService(
+	if i.imgServ == nil {
+		i.imgServ = service.NewImageService(
 			i.conf,
 			i.GetRedis().GetImageRepo(),
 			i.mq)
 	}
-	return i.imageServ
+	return i.imgServ
 }
 
-// GetJWTService returns a initialized jwt service object.
+// GetJWTService returns an initialized jwt service object.
 func (i *Initializer) GetJWTService() *service.JWTService {
 	if i.jwtServ == nil {
 		i.jwtServ = service.NewJWTService(
@@ -91,25 +98,51 @@ func (i *Initializer) GetJWTService() *service.JWTService {
 	return i.jwtServ
 }
 
-// GetTenantService returns a initialized tenant service object.
+// GetTenantService returns an initialized tenant service object.
 func (i *Initializer) GetTenantService() *service.TenantService {
-	if i.tenantServ == nil {
-		i.tenantServ = service.NewTenantService(
+	if i.tenServ == nil {
+		i.tenServ = service.NewTenantService(
 			i.conf,
 			i.GetRedis().GetTenantRepo(),
 			i.mq)
 	}
-	return i.tenantServ
+	return i.tenServ
+}
+
+// GetRabbitMqService returns an initialized RabbitMQ service object.
+func (i *Initializer) GetRabbitMqService() *service.RabbitMqService {
+	if i.rabServ == nil {
+		i.rabServ = service.NewRabbitMQService(
+			i.conf,
+			i.GetRedis().GetImageRepo())
+	}
+	return i.rabServ
 }
 
 // --- API controller functions ---
 
-// GetImageApiController returns a initialized image API controller object.
+// GetImageApiController returns an initialized image API controller object.
 func (i *Initializer) GetImageApiController() *ac.ImageController {
-	if i.imageACtrl == nil {
-		i.imageACtrl = ac.NewImageController(i.GetImageService(), i.GetTenantService())
+	if i.imgACtrl == nil {
+		i.imgACtrl = ac.NewImageController(i.GetImageService(), i.GetTenantService())
 	}
-	return i.imageACtrl
+	return i.imgACtrl
+}
+
+// GetProbeApiController returns an initialized probe API controller object.
+func (i *Initializer) GetProbeApiController() *ac.ProbeController {
+	if i.prbACtrl == nil {
+		i.prbACtrl = ac.NewProbeController()
+	}
+	return i.prbACtrl
+}
+
+// GetMetricsApiController returns an initialized metrics API controller object.
+func (i *Initializer) GetMetricsApiController() *ac.MetricsController {
+	if i.metACtrl == nil {
+		i.metACtrl = ac.NewMetricsController()
+	}
+	return i.metACtrl
 }
 
 // --- API middleware functions ---
@@ -130,18 +163,26 @@ func (i *Initializer) GetErrorApiMiddleware() *am.ErrorMiddleware {
 	return i.errAMdw
 }
 
-// GetSecurityApiMiddleware returns a initialized security API middleware object.
-func (init *Initializer) GetSecurityApiMiddleware() *am.SecurityMiddleware {
-	if init.secAMdw == nil {
-		init.secAMdw = am.NewSecurityMiddleware()
+// GetSecurityApiMiddleware returns an initialized security API middleware object.
+func (i *Initializer) GetSecurityApiMiddleware() *am.SecurityMiddleware {
+	if i.secAMdw == nil {
+		i.secAMdw = am.NewSecurityMiddleware()
 	}
-	return init.secAMdw
+	return i.secAMdw
 }
 
-// GetAuthCheckApiMiddleware returns a initialized auth check API middleware object.
+// GetAuthCheckApiMiddleware returns an initialized auth check API middleware object.
 func (i *Initializer) GetAuthCheckApiMiddleware() *am.AuthCheckMiddleware {
 	if i.authAMdw == nil {
 		i.authAMdw = am.NewAuthCheckMiddleware(i.GetJWTService())
 	}
 	return i.authAMdw
+}
+
+// GetTokenCheckApiMiddleware returns an initialized token check API middleware object.
+func (i *Initializer) GetTokenCheckApiMiddleware() *am.TokenCheckMiddleware {
+	if i.tokenAMdw == nil {
+		i.tokenAMdw = am.NewTokenCheckMiddleware()
+	}
+	return i.tokenAMdw
 }

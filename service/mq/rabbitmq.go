@@ -5,7 +5,7 @@ import (
 	"github.com/streadway/amqp"
 	"pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/constant"
-	error2 "pc-ziegert.de/media_service/common/error"
+	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
 	"pc-ziegert.de/media_service/common/model"
 )
@@ -24,7 +24,7 @@ func NewRabbtmq(config *config.Config) *RabbitMQ {
 	}
 }
 
-func (r *RabbitMQ) OpenRabbitmq() error {
+func (r *RabbitMQ) OpenRabbitmq() *e.Error {
 	url := fmt.Sprintf("amqp://%s:%s@%s:%d%s",
 		r.config.RabbitMQ.Username,
 		r.config.RabbitMQ.Password,
@@ -33,7 +33,7 @@ func (r *RabbitMQ) OpenRabbitmq() error {
 		r.config.RabbitMQ.VirtualHost)
 	con, err := amqp.Dial(url)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to connect to RabbitMQ.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to connect to RabbitMQ.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -41,7 +41,7 @@ func (r *RabbitMQ) OpenRabbitmq() error {
 
 	ch, err := r.con.Channel()
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to open a RabbitMQ channel", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to open a RabbitMQ channel", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -50,67 +50,67 @@ func (r *RabbitMQ) OpenRabbitmq() error {
 	return nil
 }
 
-func (r *RabbitMQ) CloseRabbitmq() error {
+func (r *RabbitMQ) CloseRabbitmq() *e.Error {
 	err := r.ch.Close()
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to close a RabbitMQ channel", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to close a RabbitMQ channel", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 
 	err = r.con.Close()
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to close a RabbitMQ connection", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to close a RabbitMQ connection", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 	return nil
 }
 
-func (r *RabbitMQ) DeclareExchange(name string, kind string, durable bool, autoDelete bool, internal bool, noWait bool, args amqp.Table) error {
+func (r *RabbitMQ) DeclareExchange(name string, kind string, durable bool, autoDelete bool, internal bool, noWait bool, args amqp.Table) *e.Error {
 	err := r.ch.ExchangeDeclare(name, kind, durable, autoDelete, internal, noWait, args)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to declare an exchange", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to declare an exchange", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 	return nil
 }
 
-func (r *RabbitMQ) DeclareQueue(name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, error) {
+func (r *RabbitMQ) DeclareQueue(name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, *e.Error) {
 	q, err := r.ch.QueueDeclare(name, durable, autoDelete, exclusive, noWait, args)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to declare a queue", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to declare a queue", err)
 		log.Debug(err.StackTrace())
 		return q, err
 	}
 	return q, nil
 }
 
-func (r *RabbitMQ) QueueBind(name string, key string, exchange string, noWait bool, args amqp.Table) error {
+func (r *RabbitMQ) QueueBind(name string, key string, exchange string, noWait bool, args amqp.Table) *e.Error {
 	err := r.ch.QueueBind(name, key, exchange, noWait, args)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to declare a queue", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to declare a queue", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 	return nil
 }
 
-func (r *RabbitMQ) Consume(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
+func (r *RabbitMQ) Consume(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, *e.Error) {
 	msgs, err := r.ch.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return msgs, err
 	}
 	return msgs, nil
 }
 
-func (r *RabbitMQ) NewPublishing(image *model.Image) (*amqp.Publishing, *error2.Error) {
+func (r *RabbitMQ) NewPublishing(image *model.Image) (*amqp.Publishing, *e.Error) {
 	json, err := image.JSON()
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return nil, err
 	}
@@ -121,20 +121,21 @@ func (r *RabbitMQ) NewPublishing(image *model.Image) (*amqp.Publishing, *error2.
 		DeliveryMode:    2,
 		CorrelationId:   image.GetKeyString(),
 		Body:            json,
+		Type:            constant.RabbitMQImageMessageType,
 	}, nil
 }
 
-func (r *RabbitMQ) Publish(exchange, key string, mandatory bool, immediate bool, msg amqp.Publishing) *error2.Error {
+func (r *RabbitMQ) Publish(exchange, key string, mandatory bool, immediate bool, msg amqp.Publishing) *e.Error {
 	err := r.ch.Publish(exchange, key, mandatory, immediate, msg)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
 	return nil
 }
 
-func (r *RabbitMQ) Configure() *error2.Error {
+func (r *RabbitMQ) Configure() *e.Error {
 	err := r.DeclareExchange(
 		constant.RabbitMQExchangeName,
 		amqp.ExchangeTopic,
@@ -144,7 +145,7 @@ func (r *RabbitMQ) Configure() *error2.Error {
 		false,
 		nil)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -156,7 +157,7 @@ func (r *RabbitMQ) Configure() *error2.Error {
 		false,
 		nil)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -167,7 +168,7 @@ func (r *RabbitMQ) Configure() *error2.Error {
 		false,
 		nil)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -179,7 +180,7 @@ func (r *RabbitMQ) Configure() *error2.Error {
 		false,
 		nil)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
@@ -190,7 +191,7 @@ func (r *RabbitMQ) Configure() *error2.Error {
 		false,
 		nil)
 	if err != nil {
-		err := error2.WrapError(error2.ValIdInvalid, "Failed to register a consumer.", err)
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}

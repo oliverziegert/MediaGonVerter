@@ -1,9 +1,0 @@
-# RoomGroupsAddBatchRequest
-
-## Properties
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**Items** | [**[]RoomGroupsAddBatchRequestItem**](RoomGroupsAddBatchRequestItem.md) | List of room-group mappings | [default to null]
-
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
