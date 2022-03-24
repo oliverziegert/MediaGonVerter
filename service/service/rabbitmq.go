@@ -89,5 +89,4 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 		msg.Ack(false)
 		return err
 	}
-	return nil
 }

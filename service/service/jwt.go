@@ -66,7 +66,7 @@ func (s *JWTService) ValidateToken(encodedToken string) (*jwt.Token, jwt.MapClai
 	mapClaims := jwt.MapClaims{}
 	jwtToken, err := jwt.ParseWithClaims(encodedToken, mapClaims, func(token *jwt.Token) (interface{}, error) {
 		if _, isValid := token.Method.(*jwt.SigningMethodRSA); !isValid {
-			return nil, fmt.Errorf("Invalid token", token.Header["alg"])
+			return nil, fmt.Errorf("invalid token: %s", token.Header["alg"])
 
 		}
 		return s.pk, nil
