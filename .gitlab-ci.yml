@@ -54,8 +54,7 @@ deploy:
     - compile
   script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - cat /kaniko/.docker/config.json
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - export TAG=$(cat ${CI_PROJECT_DIR}/VERSION)
     - >-
       /kaniko/executor
@@ -68,7 +67,7 @@ deploy:
       --force
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile.worker"
-      --destination "${CI_REGISTRY_IMAGE}-worker:${TAG}-worker"
+      --destination "${CI_REGISTRY_IMAGE}/worker:${TAG}"
   dependencies:
     - compile
 
