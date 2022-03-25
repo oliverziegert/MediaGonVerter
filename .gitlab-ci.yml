@@ -61,7 +61,7 @@ deploy:
       --force
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile.service"
-      --destination "${CI_REGISTRY_IMAGE}:${TAG}-service"
+      --destination "${CI_REGISTRY_IMAGE}/service:${TAG}"
     - >-
       /kaniko/executor
       --force
