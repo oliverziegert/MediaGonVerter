@@ -48,7 +48,7 @@ compile:
 deploy:
   stage: deploy
   image:
-    name: gcr.io/kaniko-project/executor:debug
+    name: gcr.io/kaniko-project/executor:v1.8.0
     entrypoint: [""]
   needs:
     - compile
