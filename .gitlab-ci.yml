@@ -4,7 +4,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
 
-image: golang:latest
+image: golang:1.18-alpine3.15
 
 variables:
   # Please edit to your GitLab project
@@ -48,7 +48,7 @@ compile:
 deploy:
   stage: deploy
   image:
-    name: gcr.io/kaniko-project/executor:v1.8.0
+    name: gcr.io/kaniko-project/executor:v1.8.0-debug
     entrypoint: [""]
   needs:
     - compile
