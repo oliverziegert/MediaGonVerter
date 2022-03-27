@@ -86,18 +86,24 @@ func (i *ImageService) SplitSize(ctx *gin.Context, size *string) (uint64, uint64
 	return width, height, nil
 }
 
-func (i *ImageService) DecryptToken(ctx *gin.Context, token *string) (*m.MediaToken, *e.Error) {
-	csc := cs.NewCoreSerivceClient(ctx, i.conf)
+func (i *ImageService) DecryptToken(ctx *gin.Context) (*m.MediaToken, *e.Error) {
+	encryptedToken := ctx.GetString(constant.ContextKeyEncryptedToken)
+	if encryptedToken == "" {
+		err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
+		log.Debug(err.StackTrace())
+		return nil, err
+	}
 
+	csc := cs.NewCoreSerivceClient(ctx, i.conf)
 	mdto := cs.MediaDecryptTokenOpts{XSdsServiceToken: i.conf.Service.Internal.Communication.Auth.Token}
-	mediaToken, err := csc.InternalApi.MediaDecryptToken(ctx, *token, &mdto)
+	mediaToken, err := csc.InternalApi.MediaDecryptToken(ctx, encryptedToken, &mdto)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
 		return nil, err
 	}
 
-	mt := tokenToMediaToken(mediaToken, *token, ctx.GetString(constant.ContextKeyDracoonForwardedHostHeader))
+	mt := tokenToMediaToken(mediaToken, encryptedToken, ctx.GetString(constant.ContextKeyDracoonForwardedHostHeader))
 
 	return mt, nil
 

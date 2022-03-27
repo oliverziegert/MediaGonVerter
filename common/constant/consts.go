@@ -1,6 +1,10 @@
 package constant
 
-import "time"
+import (
+	"fmt"
+	"os"
+	"time"
+)
 
 const (
 	AppVersion string = "1.0.0"
@@ -14,6 +18,9 @@ const (
 	ContextKeyJWT            = "jwt"
 	ContextKeyJWTTokenClaims = "jwt-token-claims"
 
+	ContextKeyNodeId         = "path-nodeId"
+	ContextKeyEncryptedToken = "path-encryptedToken"
+
 	ContextKeyDracoonForwardedProtoHeader  = "header-forwarded-proto"
 	ContextKeyDracoonForwardedHostHeader   = "header-forwarded-host"
 	ContextKeyDracoonForwardedPortHeader   = "header-forwarded-port"
@@ -25,11 +32,7 @@ const (
 	ContextAccessToken = "accesstoken"
 	ContextAPIKey      = "apikey"
 
-	SettingKeyShowOverviewDetails string = "show_overview_details"
-
 	ApiPath string = "/mediaserver"
-
-	ConfigFileName string = "config/media-service.yaml"
 
 	CoreServiceBasePathTemplate = "%s://%s:%d/api"
 
@@ -56,3 +59,11 @@ const (
 
 	ImageInitialExpiration = time.Second * 10
 )
+
+func GetConfigFilePaths() []string {
+	return []string{
+		"/etc/pc-ziegert/media-service.yaml",
+		fmt.Sprintf("%s/.pc-ziegert/media-service.yaml", os.Getenv("HOME")),
+		"config/media-service.yaml",
+	}
+}

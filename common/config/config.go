@@ -3,6 +3,7 @@ package config
 import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"os"
 	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
@@ -81,8 +82,22 @@ type Config struct {
 
 func LoadConfig() *Config {
 	var conf Config
-	readFile(&conf, constant.ConfigFileName)
+	var configFilePath string
 
+	for _, path := range constant.GetConfigFilePaths() {
+		if _, err := os.Stat(path); err == nil {
+			configFilePath = path
+		}
+	}
+
+	if configFilePath == "" {
+		err := e.NewError(e.ValIdInvalid, "No config file found")
+		log.Fatalf(err.StackTrace())
+	}
+
+	log.Infof("Using config file: %s", configFilePath)
+
+	readFile(&conf, configFilePath)
 	ex, err := time.ParseDuration(conf.Data.Expiration)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "", err)

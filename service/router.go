@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"pc-ziegert.de/media_service/common/constant"
+	"time"
 )
 
 func ConfigureRouter(i *Initializer, router *gin.Engine) {
@@ -22,6 +23,31 @@ func ConfigureRouter(i *Initializer, router *gin.Engine) {
 	corsConfig.AllowAllOrigins = i.GetConfig().HTTP.Origin.All.Enabled
 	//corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
 	router.Use(cors.New(corsConfig))
+
+	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		var statusColor, methodColor, resetColor string
+		if param.IsOutputColor() {
+			statusColor = param.StatusCodeColor()
+			methodColor = param.MethodColor()
+			resetColor = param.ResetColor()
+		}
+
+		if param.Latency > time.Minute {
+			// Truncate in a golang < 1.8 safe way
+			param.Latency = param.Latency - param.Latency%time.Second
+		}
+		// 2022/03/27 15:39:26 [INFO ]: Using config file: /Users/oliver.ziegert/.pc-ziegert/media-service.yaml
+		return fmt.Sprintf("%v [INFO ]: |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+			param.TimeStamp.Format("2006/01/02 15:04:05"),
+			statusColor, param.StatusCode, resetColor,
+			param.Latency,
+			param.ClientIP,
+			methodColor, param.Method, resetColor,
+			param.Path,
+			param.ErrorMessage,
+		)
+	}))
+	router.Use(gin.Recovery())
 }
 
 func ConfigureApiRouting(i *Initializer, router *gin.Engine) {
@@ -59,7 +85,9 @@ func AddSwaggerUiHandlers(router *gin.Engine) {
 }
 
 func AddRootHandlers(router *gin.Engine) {
-	router.GET("/")
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, constant.ApiPath)
+	})
 }
 
 func AddProbeHandlers(i *Initializer, router *gin.Engine) {

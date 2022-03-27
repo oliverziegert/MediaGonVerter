@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
@@ -154,6 +153,8 @@ func NewTokenCheckMiddleware() *TokenCheckMiddleware {
 }
 
 // ServeHTTP processes requests.
+// media-toke:
+// (HostName bas64).(UserId|nodeId|{nodeId+userTokenSha256}  base64)
 func (m *TokenCheckMiddleware) ServeHTTP() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		t, err := u.GetTokenPathVar(ctx)
@@ -163,40 +164,21 @@ func (m *TokenCheckMiddleware) ServeHTTP() gin.HandlerFunc {
 			panic(err)
 		}
 
-		tp, err := u.SplitMediaToken(t)
+		hostName, encryptedToken, userId, nodeId, err := u.GetMediaTokenParts(t)
 		if err != nil {
 			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-			l.Debug(err.StackTrace())
-			panic(err)
-		}
-
-		td, err := u.GetTenantDomainFromMediaToken(tp[0])
-		if err != nil {
-			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-			l.Debug(err.StackTrace())
-			panic(err)
-		}
-
-		stp, error := base64.StdEncoding.DecodeString(tp[1])
-		if error != nil {
-			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", error)
-			l.Debug(err.StackTrace())
-			panic(err)
-		}
-
-		stpp := strings.Split(string(stp), "|")
-		if len(stpp) != 3 {
-			err := e.NewError(e.ValIdInvalid, "Invalid token variable. (Token does not contain two parts.)")
 			l.Debug(err.StackTrace())
 			panic(err)
 		}
 
 		cc := &service.CustomClaims{
-			TenantUuid:   *td,
+			TenantUuid:   *hostName,
 			CustomerUuid: "token",
-			UserId:       u.StringToUint64(stpp[0]),
+			UserId:       *userId,
 		}
 		ctx.Set(constant.ContextKeyJWTTokenClaims, cc)
+		ctx.Set(constant.ContextKeyNodeId, nodeId)
+		ctx.Set(constant.ContextKeyEncryptedToken, encryptedToken)
 
 		ctx.Next()
 	}

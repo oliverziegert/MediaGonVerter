@@ -36,11 +36,6 @@ func (iCtrl *ImageController) HeadImageHandler() gin.HandlerFunc {
 			panic(err)
 		}
 
-		t, err := u.GetTokenPathVar(ctx)
-		if err != nil {
-			panic(err)
-		}
-
 		s, err := u.GetSizePathVar(ctx)
 		if err != nil {
 			panic(err)
@@ -53,12 +48,7 @@ func (iCtrl *ImageController) HeadImageHandler() gin.HandlerFunc {
 
 		cr := u.GetCropVar(ctx)
 
-		et, err := iCtrl.iServ.GetEncryptedToken(ctx, t)
-		if err != nil {
-			panic(err)
-		}
-
-		mt, err := iCtrl.iServ.DecryptToken(ctx, et)
+		mt, err := iCtrl.iServ.DecryptToken(ctx)
 		if err != nil {
 			newErr := iCtrl.tServ.BackoffTenant(ctx)
 			if newErr != nil {
@@ -109,11 +99,6 @@ func (iCtrl *ImageController) GetImageHandler() gin.HandlerFunc {
 			panic(err)
 		}
 
-		t, err := u.GetTokenPathVar(ctx)
-		if err != nil {
-			panic(err)
-		}
-
 		s, err := u.GetSizePathVar(ctx)
 		if err != nil {
 			panic(err)
@@ -126,12 +111,7 @@ func (iCtrl *ImageController) GetImageHandler() gin.HandlerFunc {
 
 		cr := u.GetCropVar(ctx)
 
-		et, err := iCtrl.iServ.GetEncryptedToken(ctx, t)
-		if err != nil {
-			panic(err)
-		}
-
-		mt, err := iCtrl.iServ.DecryptToken(ctx, et)
+		mt, err := iCtrl.iServ.DecryptToken(ctx)
 		if err != nil {
 			newErr := iCtrl.tServ.BackoffTenant(ctx)
 			if newErr != nil {

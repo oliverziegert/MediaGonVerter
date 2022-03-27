@@ -47,7 +47,7 @@ func main() {
 	i.GetJobService().ScheduleJobs()
 
 	// Create router
-	router := gin.Default()
+	router := gin.New()
 
 	// Set release mode for router
 	if i.GetConfig().Log.Level != "debug" {
