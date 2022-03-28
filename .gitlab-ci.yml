@@ -57,6 +57,8 @@ deploy:
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - chmod +x $CI_PROJECT_DIR/media-service
+    - chmod +x $CI_PROJECT_DIR/media-worker
     - export TAG=$(cat ${CI_PROJECT_DIR}/VERSION)
     - >-
       /kaniko/executor

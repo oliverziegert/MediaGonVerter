@@ -25,7 +25,7 @@ func NewRabbtmq(config *config.Config) *RabbitMQ {
 }
 
 func (r *RabbitMQ) OpenRabbitmq() *e.Error {
-	url := fmt.Sprintf("amqp://%s:%s@%s:%d%s",
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s",
 		r.config.RabbitMQ.Username,
 		r.config.RabbitMQ.Password,
 		r.config.RabbitMQ.IP,
