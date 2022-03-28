@@ -33,6 +33,7 @@ func (rServ *RabbitMqService) Consumer(msgs <-chan amqp.Delivery) {
 }
 
 func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.Error {
+	defer msg.Ack(false)
 	switch msg.Type {
 	case constant.RabbitMQImageMessageType:
 		{
@@ -41,7 +42,6 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "", err)
 				l.Debug(err.StackTrace())
-				msg.Ack(false)
 				return err
 			}
 
@@ -49,7 +49,6 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "", err)
 				l.Debug(err.StackTrace())
-				msg.Ack(false)
 				return err
 			}
 
@@ -58,7 +57,6 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 				if err != nil {
 					err := e.WrapError(e.ValIdInvalid, "", err)
 					l.Debug(err.StackTrace())
-					msg.Ack(false)
 					return err
 
 				}
@@ -69,7 +67,6 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "", err)
 				l.Debug(err.StackTrace())
-				msg.Ack(false)
 				return err
 			}
 
@@ -77,10 +74,8 @@ func (rServ *RabbitMqService) consume(msg amqp.Delivery, ex *time.Duration) *e.E
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "", err)
 				l.Debug(err.StackTrace())
-				msg.Ack(false)
 				return err
 			}
-			msg.Ack(false)
 			return nil
 		}
 	default:

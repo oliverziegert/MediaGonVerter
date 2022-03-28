@@ -4,7 +4,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
 
-image: golang:1.18-bullseye
+image: golang:1.18-alpine3.15
 
 variables:
   # Please edit to your GitLab project
@@ -29,6 +29,7 @@ stages:
 format:
   stage: test
   script:
+    - apk add --no-cache git build-base
     - go fmt $(go list ./... | grep -v /vendor/)
     #- go vet $(go list ./... | grep -v /vendor/)
     #- go test -race $(go list ./... | grep -v /vendor/)
@@ -38,12 +39,13 @@ compile:
   needs:
     - format
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media_service $CI_PROJECT_DIR/media_service.go
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media_worker $CI_PROJECT_DIR/worker.go
+    - apk add --no-cache git build-base
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
   artifacts:
     paths:
-      - media_service
-      - media_worker
+      - media-service
+      - media-worker
 
 deploy:
   stage: deploy
@@ -60,13 +62,15 @@ deploy:
       /kaniko/executor
       --force
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.service"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.linux-amd64.service"
+      --customPlatform=linux/amd64
       --destination "${CI_REGISTRY_IMAGE}/service:${TAG}"
     - >-
       /kaniko/executor
       --force
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.worker"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.linux-amd64.worker"
+      --customPlatform=linux/amd64
       --destination "${CI_REGISTRY_IMAGE}/worker:${TAG}"
   dependencies:
     - compile

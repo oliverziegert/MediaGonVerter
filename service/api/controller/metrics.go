@@ -2,6 +2,8 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
@@ -18,5 +20,11 @@ func NewMetricsController() *MetricsController {
 }
 
 func (metCtl *MetricsController) MetricsHandler(e *gin.Engine) {
-	metCtl.p.Use(e)
+	e.Use(metCtl.p.HandlerFunc())
+	h := promhttp.InstrumentMetricHandler(
+		prometheus.DefaultRegisterer, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{DisableCompression: true}),
+	)
+	e.GET(metCtl.p.MetricsPath, func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	})
 }

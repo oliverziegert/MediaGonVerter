@@ -132,6 +132,7 @@ func GetMediaTokenParts(token *string) (*string, *string, *uint64, *uint64, *e.E
 		return nil, nil, nil, nil, err
 	}
 	hostName = string(hostNameByteArray)
+	encryptedToken = secondTokenPart
 
 	if len(hostName) <= 1 {
 		err := e.NewError(e.ValIdInvalid, "Invalid token variable. (hostName can't be less then 1 char.)")
@@ -151,15 +152,15 @@ func GetMediaTokenParts(token *string) (*string, *string, *uint64, *uint64, *e.E
 		l.Debug(err.StackTrace())
 		return nil, nil, nil, nil, err
 	}
-	encryptedToken = string(secondTokenPartByteArray)
+	secondTokenPartString := string(secondTokenPartByteArray)
 
-	if !strings.Contains(encryptedToken, "|") {
+	if !strings.Contains(secondTokenPartString, "|") {
 		err := e.NewError(e.ValIdInvalid, "Invalid token variable. (Second token part does not contain |)")
 		l.Debug(err.StackTrace())
 		return nil, nil, nil, nil, err
 	}
 
-	secondTokenPartParts := strings.Split(encryptedToken, "|")
+	secondTokenPartParts := strings.Split(secondTokenPartString, "|")
 	if len(secondTokenPartParts) != 3 {
 		err := e.NewError(e.ValIdInvalid, "Invalid token variable. (Token does not contain three parts.)")
 		l.Debug(err.StackTrace())

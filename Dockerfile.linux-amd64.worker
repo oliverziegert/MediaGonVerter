@@ -1,0 +1,29 @@
+ARG DIGEST=3.15.2
+ARG PLATFORM=linux/amd64
+
+FROM --platform=$PLATFORM alpine:$DIGEST
+
+ARG VERSION=VERSION
+
+LABEL maintainer="Oliver Ziegert <support@pc-ziegert.dev>" \
+      version="$VERSION on Alpine $DIGEST" \
+      description="PC-Ziegert Media Worker $VERSION"
+
+ARG PC_ZIEGERT_WORKING_DIRECTORY=/usr/share/pc-ziegert/media-worker
+ARG PC_ZIEGERT_USER_UID=7002
+ARG PC_ZIEGERT_USER_NAME=pc-media-worker
+ARG PC_ZIEGERT_GROUP_GID=7002
+ARG PC_ZIEGERT_GROUP_NAME=pc-media-worker
+ARG PC_ZIEGERT_SERVICE_CONFIG_DIRECTORY=/etc/pc-ziegert
+
+RUN apk --no-cache add ca-certificates && \
+    addgroup -g ${PC_ZIEGERT_GROUP_GID} ${PC_ZIEGERT_GROUP_NAME} && \
+    adduser -H -D -s /bin/nologin -G ${PC_ZIEGERT_GROUP_NAME} -u ${PC_ZIEGERT_USER_UID} -h ${PC_ZIEGERT_WORKING_DIRECTORY} ${PC_ZIEGERT_USER_NAME} && \
+    mkdir -p ${PC_ZIEGERT_SERVICE_CONFIG_DIRECTORY} ${PC_ZIEGERT_WORKING_DIRECTORY} && \
+    chown -R ${PC_ZIEGERT_GROUP_GID}:${PC_ZIEGERT_USER_UID} ${PC_ZIEGERT_SERVICE_CONFIG_DIRECTORY} ${PC_ZIEGERT_WORKING_DIRECTORY}
+
+ADD "media-worker" "${PC_ZIEGERT_WORKING_DIRECTORY}/media-worker"
+
+WORKDIR ${PC_ZIEGERT_WORKING_DIRECTORY}
+USER ${PC_ZIEGERT_USER_NAME}
+CMD ["./media-worker"]

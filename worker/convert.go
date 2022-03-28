@@ -85,6 +85,7 @@ func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.
 		l.Debug(err.StackTrace())
 		c.State = m.ConversionStateConversionError
 		cRes <- *i
+		return
 
 	}
 	defer file.Close()
@@ -99,6 +100,7 @@ func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.
 		l.Debug(err.StackTrace())
 		c.State = m.ConversionStateConversionError
 		cRes <- *i
+		return
 	}
 
 	// resize
@@ -117,6 +119,7 @@ func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.
 		l.Debug(err.StackTrace())
 		c.State = m.ConversionStateConversionError
 		cRes <- *i
+		return
 	}
 
 	// sync image to file
@@ -126,6 +129,7 @@ func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.
 		l.Debug(err.StackTrace())
 		c.State = m.ConversionStateConversionError
 		cRes <- *i
+		return
 	}
 
 	// upload image to file
@@ -135,6 +139,7 @@ func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.
 		l.Debug(err.StackTrace())
 		c.State = m.ConversionStateConversionError
 		cRes <- *i
+		return
 	}
 	c.State = m.ConversionStateCached
 	cRes <- *i

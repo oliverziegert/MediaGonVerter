@@ -177,8 +177,8 @@ func (m *TokenCheckMiddleware) ServeHTTP() gin.HandlerFunc {
 			UserId:       *userId,
 		}
 		ctx.Set(constant.ContextKeyJWTTokenClaims, cc)
-		ctx.Set(constant.ContextKeyNodeId, nodeId)
-		ctx.Set(constant.ContextKeyEncryptedToken, encryptedToken)
+		ctx.Set(constant.ContextKeyNodeId, *nodeId)
+		ctx.Set(constant.ContextKeyEncryptedToken, *encryptedToken)
 
 		ctx.Next()
 	}
