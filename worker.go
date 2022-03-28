@@ -50,7 +50,7 @@ func main() {
 	wg.Add(1)
 	go w.Publish(&wg, mq, resp)
 
-	w.Convert(<-msg, resp)
+	w.Convert(<-msg, resp, init.GetConfig().Data.Temp.Directory)
 
 	wg.Wait()
 

@@ -31,6 +31,9 @@ type Config struct {
 		} `yaml:"s3"`
 		Expiration         string        `yaml:"expiration"`
 		ExpirationDuration time.Duration `yaml:"-"`
+		Temp               struct {
+			Directory string `yaml:"directory"`
+		} `yaml:"temp"`
 	} `yaml:"data"`
 
 	HTTP struct {

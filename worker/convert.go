@@ -15,7 +15,7 @@ import (
 	"sync"
 )
 
-func Convert(in amqp.Delivery, cRes chan<- m.Image) {
+func Convert(in amqp.Delivery, cRes chan<- m.Image, tempDir string) {
 	var wg sync.WaitGroup
 	defer close(cRes)
 
@@ -29,7 +29,7 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 	i := m.Image{}
 	i.JsonToImage(in.Body)
 
-	tds := fmt.Sprintf("./%v/%v-%d", "worker", i.TenantUuid, i.NodeId)
+	tds := fmt.Sprintf("%v/%v-%d", tempDir, i.TenantUuid, i.NodeId)
 
 	if _, err := os.Stat(tds); os.IsNotExist(err) {
 		err := os.Mkdir(tds, os.ModePerm)
@@ -64,7 +64,7 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 	for _, c := range i.Conversions {
 		if c.State != m.ConversionStateCached {
 			wg.Add(1)
-			go convertFile(&wg, &i, c, cRes)
+			go convertFile(&wg, &i, c, cRes, tds)
 		}
 	}
 
@@ -72,11 +72,9 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 	return
 }
 
-func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.Image) {
+func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.Image, tds string) {
 	// call done when finished
 	defer wg.Done()
-
-	tds := fmt.Sprintf("./%v/%v-%d", "worker", i.TenantUuid, i.NodeId)
 
 	// open files
 	file, err := os.Open(tds + "/original")

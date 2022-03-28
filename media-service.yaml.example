@@ -17,6 +17,8 @@ data:
     bucket: test
     region: eu-central-1
     secret-access-key: Qwer1234!
+  temp:
+    directory: /tmp
   expiration: 10s #168h #7d Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 http:
   port: 8084
