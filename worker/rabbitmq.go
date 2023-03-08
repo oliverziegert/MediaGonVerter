@@ -8,7 +8,6 @@ import (
 	m "pc-ziegert.de/media_service/common/model"
 	"pc-ziegert.de/media_service/service/mq"
 	"pc-ziegert.de/media_service/service/utils"
-	"sync"
 )
 
 func Consume(r *mq.RabbitMQ) (<-chan amqp.Delivery, *e.Error) {
@@ -24,9 +23,7 @@ func Consume(r *mq.RabbitMQ) (<-chan amqp.Delivery, *e.Error) {
 	)
 }
 
-func Publish(wg *sync.WaitGroup, r *mq.RabbitMQ, cRes <-chan m.Image) {
-	defer wg.Done()
-
+func Publish(r *mq.RabbitMQ, cRes <-chan m.Image) {
 	for i := range cRes {
 		err := publish(r, &i)
 		if err != nil {
