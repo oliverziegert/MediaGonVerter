@@ -2,10 +2,12 @@ package utils
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"math/rand"
 	"os"
+	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"
 	l "pc-ziegert.de/media_service/common/log"
 	"regexp"
@@ -109,7 +111,7 @@ func GetCropVar(ctx *gin.Context) bool {
 }
 
 // GetMediaTokenParts return individual parts of the given token
-//(HostName bas64).(UserId|nodeId|{nodeId+userTokenSha256}  base64)
+// (HostName bas64).(UserId|nodeId|{nodeId+userTokenSha256}  base64)
 func GetMediaTokenParts(token *string) (*string, *string, *uint64, *uint64, *e.Error) {
 	var hostName string
 	var encryptedToken string
@@ -182,4 +184,18 @@ func GetMediaTokenParts(token *string) (*string, *string, *uint64, *uint64, *e.E
 	}
 
 	return &hostName, &encryptedToken, &userId, &nodeId, nil
+}
+
+func GetRabbitMQWorkerRoutingKeyFromNodeType(t string) (string, *e.Error) {
+	sb := strings.Builder{}
+	sb.WriteString(constant.RabbitMQWorkerRoutingKeyPrefix)
+	switch t {
+	case "image/webp", "image/heic", "image/jpeg", "image/svg+xml", "image/jp2", "image/gif", "image/png", "image/tiff", "image/heif", "application/pdf":
+		sb.WriteString(strings.ReplaceAll(t, "/", "."))
+		return sb.String(), nil
+	default:
+		err := e.NewError(e.ValIdInvalid, fmt.Sprintf("Invalid node type: %s", t))
+		l.Debug(err.StackTrace())
+		return "", err
+	}
 }

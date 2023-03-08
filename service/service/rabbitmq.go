@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	c "pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"

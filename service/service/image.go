@@ -216,9 +216,13 @@ func (i *ImageService) downloadAndConvert(ctx *gin.Context, image *m.Image) *e.E
 		log.Debug(err.StackTrace())
 		return err
 	}
+	routingKey, err := utils.GetRabbitMQWorkerRoutingKeyFromNodeType(image.NodeType)
+	if err != nil {
+		return err
+	}
 	err = i.mq.Publish(
 		constant.RabbitMQExchangeName,
-		image.NodeType,
+		routingKey,
 		false,
 		false,
 		*pub)

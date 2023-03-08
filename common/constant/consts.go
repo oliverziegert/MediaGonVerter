@@ -44,6 +44,7 @@ const (
 
 	RabbitMQExchangeName           = "pc-ziegert.mediaservice"
 	RabbitMQMediaServiceRoutingKey = "mediaservice"
+	RabbitMQWorkerRoutingKeyPrefix = "worker."
 	RabbitMQQueueWorkerName        = "pc-ziegert.mediaservice.worker"
 	RabbitMQQueueMediaServiceName  = "pc-ziegert.mediaservice.mediaservice"
 	RabbitMQImageMessageType       = "mediaService.image"

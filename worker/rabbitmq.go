@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"
 	l "pc-ziegert.de/media_service/common/log"
