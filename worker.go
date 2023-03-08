@@ -49,7 +49,7 @@ func main() {
 
 	go w.Publish(mq, resp)
 
-	vips.LoggingSettings(w.VipsLogger, vips.LogLevelInfo)
+	vips.LoggingSettings(w.VipsLogger, w.GetVipsLogLevel(conf.Log.Level))
 	vips.Startup(nil)
 	defer vips.Shutdown()
 
