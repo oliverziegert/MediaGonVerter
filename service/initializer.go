@@ -63,7 +63,7 @@ func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 // GetRedis returns an initialized Redis object.
 func (i *Initializer) GetRedis() *db.Redis {
 	if i.redis == nil {
-		i.redis = db.NewReddis(i.conf)
+		i.redis = db.NewRedis(i.conf)
 	}
 	return i.redis
 }

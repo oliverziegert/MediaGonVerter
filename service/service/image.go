@@ -246,9 +246,8 @@ func (i *ImageService) generateS3UploadUrls(ctx *gin.Context, image *m.Image) *e
 	for _, conversion := range image.Conversions {
 		if conversion.State != m.ConversionStateCached {
 			key := fmt.Sprintf(constant.S3KeyTemplate,
-				image.NodeId%10,
-				cc.TenantUuid,
 				cc.CustomerUuid,
+				image.NodeId%10,
 				image.NodeId,
 				conversion.Width,
 				conversion.Height,
@@ -286,9 +285,8 @@ func (i *ImageService) GenerateS3DownloadUrl(ctx *gin.Context, image *m.Image, c
 	}
 
 	key := fmt.Sprintf(constant.S3KeyTemplate,
-		image.NodeId%10,
-		cc.TenantUuid,
 		cc.CustomerUuid,
+		image.NodeId%10,
 		image.NodeId,
 		conversion.Width,
 		conversion.Height,

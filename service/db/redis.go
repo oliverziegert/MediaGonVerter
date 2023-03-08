@@ -18,8 +18,8 @@ type Redis struct {
 	tRepo *repo.TenantRepo
 }
 
-// NewReddis creates a new Reddis for the supplied configuration
-func NewReddis(config *config.Config) *Redis {
+// NewRedis creates a new Redis for the supplied configuration
+func NewRedis(config *config.Config) *Redis {
 	return &Redis{
 		config: config,
 		rdb:    nil,
