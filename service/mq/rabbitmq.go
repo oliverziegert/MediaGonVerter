@@ -172,28 +172,5 @@ func (r *RabbitMQ) Configure() *e.Error {
 		log.Debug(err.StackTrace())
 		return err
 	}
-	_, err = r.DeclareQueue(
-		constant.RabbitMQQueueWorkerName,
-		true,
-		false,
-		false,
-		false,
-		nil)
-	if err != nil {
-		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
-		return err
-	}
-	err = r.QueueBind(
-		constant.RabbitMQQueueWorkerName,
-		constant.RabbitMQWorkerRoutingKey,
-		constant.RabbitMQExchangeName,
-		false,
-		nil)
-	if err != nil {
-		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
-		return err
-	}
 	return nil
 }

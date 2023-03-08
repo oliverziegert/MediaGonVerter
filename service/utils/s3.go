@@ -20,6 +20,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 		Credentials:      scp,
 		Region:           cfg.Data.S3.Region,
 		EndpointResolver: s3.EndpointResolverFromURL(cfg.Data.S3.Address),
+		UsePathStyle:     true,
 	})
 
 	cacheControl := fmt.Sprintf("max-age=%d", int(cfg.Data.ExpirationDuration.Seconds()))
@@ -51,6 +52,7 @@ func GenerateS3PresignDownloadUrl(ctx *gin.Context, cfg *config.Config, key stri
 		Credentials:      scp,
 		Region:           cfg.Data.S3.Region,
 		EndpointResolver: s3.EndpointResolverFromURL(cfg.Data.S3.Address),
+		UsePathStyle:     true,
 	})
 
 	goi := &s3.GetObjectInput{

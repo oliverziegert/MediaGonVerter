@@ -8,7 +8,6 @@ import (
 	m "pc-ziegert.de/media_service/common/model"
 	"pc-ziegert.de/media_service/service/mq"
 	"pc-ziegert.de/media_service/service/utils"
-	"sync"
 )
 
 func Consume(r *mq.RabbitMQ) (<-chan amqp.Delivery, *e.Error) {
@@ -24,9 +23,7 @@ func Consume(r *mq.RabbitMQ) (<-chan amqp.Delivery, *e.Error) {
 	)
 }
 
-func Publish(wg *sync.WaitGroup, r *mq.RabbitMQ, cRes <-chan m.Image) {
-	defer wg.Done()
-
+func Publish(r *mq.RabbitMQ, cRes <-chan m.Image) {
 	for i := range cRes {
 		err := publish(r, &i)
 		if err != nil {
@@ -54,6 +51,48 @@ func publish(r *mq.RabbitMQ, i *m.Image) *e.Error {
 		err := e.WrapError(e.ValIdInvalid, "", err)
 		l.Debug(err.StackTrace())
 		return err
+	}
+	return nil
+}
+
+func ConfigureRabbitMq(r *mq.RabbitMQ) *e.Error {
+	err := r.DeclareExchange(
+		constant.RabbitMQExchangeName,
+		amqp.ExchangeTopic,
+		true,
+		false,
+		false,
+		false,
+		nil)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		l.Debug(err.StackTrace())
+		return err
+	}
+	_, err = r.DeclareQueue(
+		constant.RabbitMQQueueWorkerName,
+		true,
+		false,
+		false,
+		false,
+		nil)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		l.Debug(err.StackTrace())
+		return err
+	}
+	for _, routingKey := range GetRabbitMQWorkerRoutingKeys() {
+		err = r.QueueBind(
+			constant.RabbitMQQueueWorkerName,
+			routingKey,
+			constant.RabbitMQExchangeName,
+			false,
+			nil)
+		if err != nil {
+			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+			l.Debug(err.StackTrace())
+			return err
+		}
 	}
 	return nil
 }

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/davidbyttow/govips/v2/vips"
 	"pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/constant"
 	l "pc-ziegert.de/media_service/common/log"
 	m "pc-ziegert.de/media_service/common/model"
 	s "pc-ziegert.de/media_service/service"
 	w "pc-ziegert.de/media_service/worker"
-	"sync"
 )
 
 func main() {
@@ -31,28 +31,35 @@ func main() {
 		l.Error(err.Error())
 	}
 	defer mq.CloseRabbitmq()
-	err = mq.Configure()
+	err = w.ConfigureRabbitMq(mq)
 	if err != nil {
 		l.Debug(err.StackTrace())
 		l.Error(err.Error())
 	}
 
-	msg, err := w.Consume(mq)
+	msgs, err := w.Consume(mq)
 	if err != nil {
 		l.Debug(err.StackTrace())
 		l.Error(err.Error())
 		panic(err)
 	}
 
-	var wg sync.WaitGroup
 	resp := make(chan m.Image)
+	var forever chan struct{}
 
-	wg.Add(1)
-	go w.Publish(&wg, mq, resp)
+	go w.Publish(mq, resp)
 
-	w.Convert(<-msg, resp, init.GetConfig().Data.Temp.Directory)
+	vips.LoggingSettings(w.VipsLogger, w.GetVipsLogLevel(conf.Log.Level))
+	vips.Startup(nil)
+	defer vips.Shutdown()
 
-	wg.Wait()
+	go func() {
+		for msg := range msgs {
+			w.Convert(msg, resp)
+		}
+	}()
 
-	l.Info("Worker exiting")
+	l.Info("Waiting for logs. To exit press CTRL+C")
+	<-forever
+
 }

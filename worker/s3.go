@@ -1,22 +1,16 @@
 package worker
 
 import (
+	"bytes"
 	"errors"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"net/http"
-	"os"
-	"pc-ziegert.de/media_service/common/log"
 )
 
-func UploadFile(filePath string, s3ResignedUrl *v4.PresignedHTTPRequest, contentType string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	defer file.Close()
+func UploadFile(rawBody *[]byte, s3ResignedUrl *v4.PresignedHTTPRequest, contentType string) error {
 
 	client := &http.Client{}
-	req, err := http.NewRequest(s3ResignedUrl.Method, s3ResignedUrl.URL, file)
+	req, err := http.NewRequest(s3ResignedUrl.Method, s3ResignedUrl.URL, bytes.NewReader(*rawBody))
 	req.Header = s3ResignedUrl.SignedHeader
 	req.Header.Add("Content-Type", contentType)
 

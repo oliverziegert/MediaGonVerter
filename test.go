@@ -1,19 +1,48 @@
 package main
 
 import (
-	"fmt"
+	"pc-ziegert.de/media_service/common/config"
+	"pc-ziegert.de/media_service/common/constant"
+	l "pc-ziegert.de/media_service/common/log"
 	m "pc-ziegert.de/media_service/common/model"
-	"reflect"
+	s "pc-ziegert.de/media_service/service"
+	"pc-ziegert.de/media_service/service/utils"
 )
 
 func main() {
+	conf := config.LoadConfig()
 	img := m.NewImage("42", 1337)
+	img.NodeType = "image/jpeg"
+
+	s3Download, _ := utils.GenerateS3PresignDownloadUrl(nil, conf, "testimg/DSC_7893.jpg", img.NodeType)
+	s3Upload, _, _ := utils.GenerateS3PresignUploadUrl(nil, conf, "media/DSC_7893.jpg", img.NodeType)
+
+	img.S3DownloadUrl = s3Download.URL
 	c := m.NewConversion(42, 42, false)
+	c.S3UploadUrl = s3Upload
 	img.Conversions = append(img.Conversions, c)
-	v := reflect.ValueOf(*img)
+	// Create initializer
+	init := s.NewInitializer(conf)
 
-	for i := 0; i < v.NumField(); i++ {
-		fmt.Printf("Field: %s\tValue: %v\tTag; %s\n", v.Type().Field(i).Name, v.Field(i).Interface(), v.Type().Field(i).Tag)
+	// Open RabbitMQ connection
+	// create Exchange and routing keys
+	mq := init.GetRabbitMQ()
+	err := mq.OpenRabbitmq()
+	if err != nil {
+		l.Debug(err.StackTrace())
+		l.Error(err.Error())
 	}
-
+	defer mq.CloseRabbitmq()
+	err = mq.Configure()
+	if err != nil {
+		l.Debug(err.StackTrace())
+		l.Error(err.Error())
+	}
+	pub, err := mq.NewPublishing(img)
+	mq.Publish(
+		constant.RabbitMQExchangeName,
+		constant.RabbitMQWorkerRoutingKey,
+		false,
+		false,
+		*pub)
 }
