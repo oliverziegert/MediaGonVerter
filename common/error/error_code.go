@@ -69,13 +69,15 @@ const (
 	LogicUserAlreadyExists              = -410
 
 	// System errors
-	SysUnknown             = -500
-	SysDbUnknown           = -501
-	SysDbConnectionFailed  = -502
-	SysDbTransactionFailed = -503
-	SysDbQueryFailed       = -504
-	SysDbInsertFailed      = -505
-	SysDbUpdateFailed      = -506
-	SysDbDeleteFailed      = -507
-	SysJobFailed           = -508
+	SysUnknown                = -500
+	SysDbUnknown              = -501
+	SysDbConnectionFailed     = -502
+	SysDbTransactionFailed    = -503
+	SysDbQueryFailed          = -504
+	SysDbInsertFailed         = -505
+	SysDbUpdateFailed         = -506
+	SysDbDeleteFailed         = -507
+	SysJobFailed              = -508
+	SysRabbitConnectionFailed = -509
+	SysRedisConnectionFailed  = -510
 )

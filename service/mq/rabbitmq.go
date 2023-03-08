@@ -33,7 +33,7 @@ func (r *RabbitMQ) OpenRabbitmq() *e.Error {
 		r.config.RabbitMQ.VirtualHost)
 	con, err := amqp.Dial(url)
 	if err != nil {
-		err := e.WrapError(e.ValIdInvalid, "Failed to connect to RabbitMQ.", err)
+		err := e.WrapError(e.SysRabbitConnectionFailed, "Failed to connect to RabbitMQ.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}
