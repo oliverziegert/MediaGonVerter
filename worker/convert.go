@@ -16,25 +16,30 @@ import (
 
 func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 	var wg sync.WaitGroup
-
 	defer in.Ack(false)
-
-	if in.Type != constant.RabbitMQImageMessageType {
-		l.Fatalf("Wrong message type:", in.Type)
-		return
-	}
 
 	i := m.Image{}
 	i.JsonToImage(in.Body)
 
+	if in.Type != constant.RabbitMQImageMessageType {
+		l.Errorf("Wrong message type:", in.Type)
+		abortConvert(&i, cRes)
+		return
+	}
+
 	hResp, err := http.Get(i.S3DownloadUrl)
 	if err != nil {
-		l.Fatal(err.Error())
-	}
-	if hResp.StatusCode != http.StatusOK {
-		l.Fatal(err.Error())
+		l.Error(err.Error())
+		abortConvert(&i, cRes)
+		return
 	}
 	defer hResp.Body.Close()
+
+	if hResp.StatusCode != http.StatusOK {
+		l.Errorf("S3 Download failed, HTTP Status Code: \n%d", hResp.StatusCode)
+		abortConvert(&i, cRes)
+		return
+	}
 
 	rawBody, err := io.ReadAll(hResp.Body)
 
@@ -47,6 +52,15 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 
 	wg.Wait()
 	return
+}
+
+func abortConvert(i *m.Image, cRes chan<- m.Image) {
+	for _, c := range i.Conversions {
+		if c.State != m.ConversionStateCached {
+			c.State = m.ConversionStateConversionError
+			cRes <- *i
+		}
+	}
 }
 
 func convertFile(wg *sync.WaitGroup, i *m.Image, c *m.Conversion, cRes chan<- m.Image, rawBody *[]byte) {
