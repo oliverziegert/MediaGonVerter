@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"github.com/davidbyttow/govips/v2/vips"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/streadway/amqp"
 	"io"
 	"log"
@@ -27,7 +28,7 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 		return
 	}
 
-	hResp, err := http.Get(i.S3DownloadUrl)
+	hResp, err := retryablehttp.Get(i.S3DownloadUrl)
 	if err != nil {
 		l.Error(err.Error())
 		abortConvert(&i, cRes)
@@ -57,7 +58,7 @@ func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 func abortConvert(i *m.Image, cRes chan<- m.Image) {
 	for _, c := range i.Conversions {
 		if c.State != m.ConversionStateCached {
-			c.State = m.ConversionStateConversionError
+			c.State = m.ConversionStateTransferError
 			cRes <- *i
 		}
 	}

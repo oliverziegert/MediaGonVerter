@@ -14,8 +14,8 @@ func main() {
 	img := m.NewImage("42", 1337)
 	img.NodeType = "image/jpeg"
 
-	fileName := "qwert"
-	fileExtension := "mp4"
+	fileName := "uipoa"
+	fileExtension := "jpg"
 	download_key := "0/" + fileName + "." + fileExtension
 	upload_key := "media/" + fileName + ".jpg"
 
