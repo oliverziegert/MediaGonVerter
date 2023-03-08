@@ -1,8 +1,9 @@
 package mq
 
 import (
+	"context"
 	"fmt"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"pc-ziegert.de/media_service/common/config"
 	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"
@@ -12,8 +13,8 @@ import (
 
 type RabbitMQ struct {
 	config *config.Config
-	con    *amqp.Connection
-	ch     *amqp.Channel
+	con    *Connection
+	ch     *Channel
 }
 
 func NewRabbtmq(config *config.Config) *RabbitMQ {
@@ -31,7 +32,7 @@ func (r *RabbitMQ) OpenRabbitmq() *e.Error {
 		r.config.RabbitMQ.IP,
 		r.config.RabbitMQ.Port,
 		r.config.RabbitMQ.VirtualHost)
-	con, err := amqp.Dial(url)
+	con, err := Dial(url)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to connect to RabbitMQ.", err)
 		log.Debug(err.StackTrace())
@@ -126,7 +127,7 @@ func (r *RabbitMQ) NewPublishing(image *model.Image) (*amqp.Publishing, *e.Error
 }
 
 func (r *RabbitMQ) Publish(exchange, key string, mandatory bool, immediate bool, msg amqp.Publishing) *e.Error {
-	err := r.ch.Publish(exchange, key, mandatory, immediate, msg)
+	err := r.ch.PublishWithContext(context.TODO(), exchange, key, mandatory, immediate, msg)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
 		log.Debug(err.StackTrace())
