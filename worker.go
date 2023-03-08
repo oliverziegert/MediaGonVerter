@@ -31,7 +31,7 @@ func main() {
 		l.Error(err.Error())
 	}
 	defer mq.CloseRabbitmq()
-	err = mq.Configure()
+	err = w.ConfigureRabbitMq(mq)
 	if err != nil {
 		l.Debug(err.StackTrace())
 		l.Error(err.Error())

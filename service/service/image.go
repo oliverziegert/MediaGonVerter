@@ -218,7 +218,7 @@ func (i *ImageService) downloadAndConvert(ctx *gin.Context, image *m.Image) *e.E
 	}
 	err = i.mq.Publish(
 		constant.RabbitMQExchangeName,
-		constant.RabbitMQWorkerRoutingKey,
+		image.NodeType,
 		false,
 		false,
 		*pub)

@@ -43,7 +43,6 @@ const (
 	DracoonClientUserAgentHeader = "X-Dracoon-Client-User-Agent"
 
 	RabbitMQExchangeName           = "pc-ziegert.mediaservice"
-	RabbitMQWorkerRoutingKey       = "worker"
 	RabbitMQMediaServiceRoutingKey = "mediaservice"
 	RabbitMQQueueWorkerName        = "pc-ziegert.mediaservice.worker"
 	RabbitMQQueueMediaServiceName  = "pc-ziegert.mediaservice.mediaservice"

@@ -54,3 +54,45 @@ func publish(r *mq.RabbitMQ, i *m.Image) *e.Error {
 	}
 	return nil
 }
+
+func ConfigureRabbitMq(r *mq.RabbitMQ) *e.Error {
+	err := r.DeclareExchange(
+		constant.RabbitMQExchangeName,
+		amqp.ExchangeTopic,
+		true,
+		false,
+		false,
+		false,
+		nil)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		l.Debug(err.StackTrace())
+		return err
+	}
+	_, err = r.DeclareQueue(
+		constant.RabbitMQQueueWorkerName,
+		true,
+		false,
+		false,
+		false,
+		nil)
+	if err != nil {
+		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+		l.Debug(err.StackTrace())
+		return err
+	}
+	for _, routingKey := range GetRabbitMQWorkerRoutingKeys() {
+		err = r.QueueBind(
+			constant.RabbitMQQueueWorkerName,
+			routingKey,
+			constant.RabbitMQExchangeName,
+			false,
+			nil)
+		if err != nil {
+			err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
+			l.Debug(err.StackTrace())
+			return err
+		}
+	}
+	return nil
+}
