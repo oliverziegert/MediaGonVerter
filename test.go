@@ -17,8 +17,13 @@ func main() {
 	img := m.NewImage("42", 1337)
 	img.NodeType = "image/jpeg"
 
-	s3Download, _ := utils.GenerateS3PresignDownloadUrl(ctx, conf, "testimg/DSC_7894.jpg", img.NodeType)
-	s3Upload, _, _ := utils.GenerateS3PresignUploadUrl(ctx, conf, "media/DSC_7894.jpg", img.NodeType)
+	fileName := "uipoa"
+	fileExtension := "jpg"
+	download_key := "0/" + fileName + "." + fileExtension
+	upload_key := "media/" + fileName + ".jpg"
+
+	s3Download, _ := utils.GenerateS3PresignDownloadUrl(ctx, conf, download_key, "application/json")
+	s3Upload, _, _ := utils.GenerateS3PresignUploadUrl(ctx, conf, upload_key, "application/json")
 
 	img.S3DownloadUrl = s3Download.URL
 	c := m.NewConversion(42, 42, false)

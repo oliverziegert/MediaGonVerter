@@ -22,6 +22,7 @@ const (
 	ConversionStateUnknown ConversionState = iota
 	ConversionStateCached
 	ConversionStateConversionError
+	ConversionStateTransferError
 )
 
 type Conversion struct {
