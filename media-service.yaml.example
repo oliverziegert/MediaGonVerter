@@ -1,9 +1,9 @@
-####################################################
-# possible location:                               #
-#   - /etc/pc-ziegert/media-service.yaml.example   #
-#   - $HOME/.pc-ziegert/media-service.yaml.example #
-#   - config/media-service.yaml.example            #
-####################################################
+############################################
+# possible location:                       #
+#   - /etc/pc-ziegert/media-service.yaml   #
+#   - $HOME/.pc-ziegert/media-service.yaml #
+#   - config/media-service.yaml            #
+############################################
 ---
 auth:
   jwt:

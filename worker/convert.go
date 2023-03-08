@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-func Convert(in amqp.Delivery, cRes chan<- m.Image, tempDir string) {
+func Convert(in amqp.Delivery, cRes chan<- m.Image) {
 	var wg sync.WaitGroup
 	defer close(cRes)
 
