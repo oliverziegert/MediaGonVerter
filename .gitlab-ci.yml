@@ -4,7 +4,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
 
-image: fedora
+image: golang:1.20-alpine3.17
 
 variables:
   # Please edit to your GitLab project
@@ -29,7 +29,7 @@ stages:
 format:
   stage: test
   script:
-    - dnf update && dnf install go
+    - apk add --no-cache git build-base
     - go fmt $(go list ./... | grep -v /vendor/)
     #- go vet $(go list ./... | grep -v /vendor/)
     #- go test -race $(go list ./... | grep -v /vendor/)
@@ -39,8 +39,7 @@ compile:
   needs:
     - format
   script:
-    - dnf update && dnf install go
-    - dnf install glibc-static
+    - apk add --no-cache git build-base vips-dev
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
   artifacts:
