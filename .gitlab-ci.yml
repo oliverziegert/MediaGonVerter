@@ -40,7 +40,7 @@ compile:
     - format
   script:
     - apk update
-    - apk add --no-cache git build-base vips-dev glib-static glib-dev
+    - apk add --no-cache git build-base vips-dev
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
   artifacts:
