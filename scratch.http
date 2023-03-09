@@ -1,8 +1,11 @@
 ###
-GET http://localhost:8080/mediaserver/image/Y2xvdWQucGMtemllZ2VydC5kZQ==.NHw3MjgyNXw2ZDQ4ZTVmZDhkNWEwNTNmZDkzZjUxNzFmZTA0NzM2NjYzMjdkNmY3MTljZDNlMmYyYjFmNGE1NDVmYjA5MGZk/64x64?crop=true
+GET http://localhost:8084/mediaserver/image/c3RhZ2luZy5kcmFjb29uLmNvbQ==.NDU0OXwxMTI1MzY1fGMxMjNhMDEyZDMzNTE3Yjk3ODc1MDk4Yjg4YmJhZGExYzlmNzBiYTUyMTM5M2UzMzA3MWFmNTQxMTI4MzEzNWI=/64x64?crop=true
 Accept: application/json
-Host: cloud.pc-ziegert.de
-X-Forwarded-For: 192.168.2.24
+X-Dracoon-Forwarded-Proto: https
+X-Dracoon-Forwarded-Host: staging.dracoon.com
+X-Dracoon-Forwarded-Port: 443
+X-Dracoon-Client-Address: 127.0.0.1
+X-Dracoon-Client-User-Agent: Test
 
 ###
 GET http://localhost:8084/healthz

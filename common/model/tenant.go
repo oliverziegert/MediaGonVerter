@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 	e "pc-ziegert.de/media_service/common/error"
-	"pc-ziegert.de/media_service/common/log"
+	l "pc-ziegert.de/media_service/common/log"
 	"strconv"
 )
 
@@ -44,7 +44,7 @@ func (t *Tenant) MapToTenant(valueMap map[string]string) *e.Error {
 	ts, err := stringToTenantState(valueMap["tenantState"])
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return err
 	}
 	t.TenantState = *ts
@@ -55,7 +55,7 @@ func stringToTenantState(s string) (*TenantState, *e.Error) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "stringToTenantState failed", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, err
 	}
 	ts := TenantState(i)

@@ -3,6 +3,9 @@ package service
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"pc-ziegert.de/media_service/common/config"
@@ -13,23 +16,25 @@ import (
 	cs "pc-ziegert.de/media_service/service/client/core-service"
 	"pc-ziegert.de/media_service/service/db/repo"
 	"pc-ziegert.de/media_service/service/mq"
+	"pc-ziegert.de/media_service/service/s3"
+	repoS3 "pc-ziegert.de/media_service/service/s3/repo"
 	"pc-ziegert.de/media_service/service/utils"
-	"strings"
-	"time"
 )
 
 // ImageService contains image related logic.
 type ImageService struct {
 	conf  *config.Config
 	iRepo *repo.ImageRepo
+	sRepo *repoS3.S3ConfigRepo
 	mq    *mq.RabbitMQ
 }
 
 // NewImageService NewUserService create a new user service.
-func NewImageService(conf *config.Config, iRepo *repo.ImageRepo, mq *mq.RabbitMQ) *ImageService {
+func NewImageService(conf *config.Config, iRepo *repo.ImageRepo, sRepo *repoS3.S3ConfigRepo, mq *mq.RabbitMQ) *ImageService {
 	return &ImageService{
 		conf:  conf,
 		iRepo: iRepo,
+		sRepo: sRepo,
 		mq:    mq,
 	}
 }
@@ -243,6 +248,10 @@ func (i *ImageService) generateS3UploadUrls(ctx *gin.Context, image *m.Image) *e
 		return err
 	}
 
+	s3Config, err := i.sRepo.GetS3Config(ctx)
+	if err != nil {
+		return err
+	}
 	for _, conversion := range image.Conversions {
 		if conversion.State != m.ConversionStateCached {
 			key := fmt.Sprintf(constant.S3KeyTemplate,
@@ -252,7 +261,7 @@ func (i *ImageService) generateS3UploadUrls(ctx *gin.Context, image *m.Image) *e
 				conversion.Width,
 				conversion.Height,
 				conversion.Crop)
-			req, expires, err := utils.GenerateS3PresignUploadUrl(ctx, i.conf, key, image.NodeType)
+			req, expires, err := s3.GenerateS3PresignUploadUrl(ctx, i.conf, s3Config, key, image.NodeType)
 
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
@@ -284,6 +293,10 @@ func (i *ImageService) GenerateS3DownloadUrl(ctx *gin.Context, image *m.Image, c
 		return "", err
 	}
 
+	s3Config, err := i.sRepo.GetS3Config(ctx)
+	if err != nil {
+		return "", err
+	}
 	key := fmt.Sprintf(constant.S3KeyTemplate,
 		cc.CustomerUuid,
 		image.NodeId%10,
@@ -291,7 +304,7 @@ func (i *ImageService) GenerateS3DownloadUrl(ctx *gin.Context, image *m.Image, c
 		conversion.Width,
 		conversion.Height,
 		conversion.Crop)
-	req, err := utils.GenerateS3PresignedDownloadUrl(ctx, i.conf, key, image.NodeType)
+	req, err := s3.GenerateS3PresignedDownloadUrl(ctx, s3Config, key)
 
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)

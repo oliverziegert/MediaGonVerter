@@ -1,4 +1,4 @@
-package utils
+package s3
 
 import (
 	"fmt"
@@ -7,20 +7,39 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
-	"pc-ziegert.de/media_service/common/config"
+	c "pc-ziegert.de/media_service/common/config"
 	e "pc-ziegert.de/media_service/common/error"
 	l "pc-ziegert.de/media_service/common/log"
+	m "pc-ziegert.de/media_service/common/model"
+	"pc-ziegert.de/media_service/service/s3/repo"
 	"time"
 )
 
-func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string, contentType string) (*v4.PresignedHTTPRequest, *time.Time, *e.Error) {
+type S3 struct {
+	sRepo *repo.S3ConfigRepo
+}
 
-	scp := credentials.NewStaticCredentialsProvider(cfg.Data.S3.AccessKeyId, cfg.Data.S3.SecretAccessKey, "")
+// NewS3 creates a new S3 repository
+func NewS3() *S3 {
+	return &S3{}
+}
+
+// GetS3ConfigRepo provides the S3ConfigRepo.
+func (r *S3) GetS3ConfigRepo() *repo.S3ConfigRepo {
+	if r.sRepo == nil {
+		r.sRepo = repo.NewS3Repo()
+	}
+	return r.sRepo
+}
+
+func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *c.Config, s3Config *m.S3Config, key string, contentType string) (*v4.PresignedHTTPRequest, *time.Time, *e.Error) {
+
+	scp := credentials.NewStaticCredentialsProvider(s3Config.AccessKeyId, s3Config.SecretAccessKey, "")
 
 	client := s3.New(s3.Options{
 		Credentials:      scp,
-		Region:           cfg.Data.S3.Region,
-		EndpointResolver: s3.EndpointResolverFromURL(cfg.Data.S3.Address),
+		Region:           s3Config.Region,
+		EndpointResolver: s3.EndpointResolverFromURL(s3Config.Address),
 		UsePathStyle:     true,
 	})
 
@@ -31,7 +50,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 	cacheControl := fmt.Sprintf("private, no-transform, max-age=%d, stale-if-error=86400", int(cfg.Data.ExpirationDuration.Seconds()))
 	expires := time.Now().Add(cfg.Data.ExpirationDuration)
 	poi := &s3.PutObjectInput{
-		Bucket:       &cfg.Data.S3.Bucket,
+		Bucket:       &s3Config.Bucket,
 		Key:          &key,
 		ContentType:  &contentType,
 		CacheControl: &cacheControl,
@@ -49,31 +68,30 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 	return resp, &expires, nil
 }
 
-func GenerateS3PresignedDownloadUrl(ctx *gin.Context, cfg *config.Config, key string, contentType string) (*v4.PresignedHTTPRequest, *e.Error) {
-	scp := credentials.NewStaticCredentialsProvider(cfg.Data.S3.AccessKeyId, cfg.Data.S3.SecretAccessKey, "")
+func GenerateS3PresignedDownloadUrl(ctx *gin.Context, s3Config *m.S3Config, key string) (*v4.PresignedHTTPRequest, *e.Error) {
+
+	scp := credentials.NewStaticCredentialsProvider(s3Config.AccessKeyId, s3Config.SecretAccessKey, "")
 
 	client := s3.New(s3.Options{
 		Credentials:      scp,
-		Region:           cfg.Data.S3.Region,
-		EndpointResolver: s3.EndpointResolverFromURL(cfg.Data.S3.Address),
+		Region:           s3Config.Region,
+		EndpointResolver: s3.EndpointResolverFromURL(s3Config.Address),
 		UsePathStyle:     true,
 	})
 
-	bucket := cfg.Data.S3.Bucket
-
 	// 'refresh' timestamp so that the file expiration gets reset
 	coi := s3.CopyObjectInput{
-		Bucket:     &cfg.Data.S3.Bucket,
-		CopySource: aws.String(fmt.Sprintf("%s/%s", bucket, key)),
+		Bucket:     &s3Config.Bucket,
+		CopySource: aws.String(fmt.Sprintf("%s/%s", s3Config.Bucket, key)),
 		Key:        &key,
 	}
 
 	if _, err := client.CopyObject(ctx, &coi); err != nil {
-		l.Infof("could not refresh %s/%s: %v", bucket, key, err)
+		l.Infof("could not refresh %s/%s: %v", s3Config.Bucket, key, err)
 	}
 
 	goi := &s3.GetObjectInput{
-		Bucket: &cfg.Data.S3.Bucket,
+		Bucket: &s3Config.Bucket,
 		Key:    &key,
 	}
 

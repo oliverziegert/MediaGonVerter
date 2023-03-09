@@ -5,8 +5,8 @@ import (
 	"fmt"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	e "pc-ziegert.de/media_service/common/error"
-	"pc-ziegert.de/media_service/common/log"
-	"pc-ziegert.de/media_service/service/utils"
+	l "pc-ziegert.de/media_service/common/log"
+	u "pc-ziegert.de/media_service/service/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -97,7 +97,7 @@ func (i *Image) MapToImage(valueMap map[string]string) *e.Error {
 	i.NodeType = valueMap["nodeType"]
 	if i.NodeSize, err = strconv.ParseUint(valueMap["nodeSize"], 10, 64); err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return err
 	}
 
@@ -110,26 +110,26 @@ func (i *Image) MapToImage(valueMap map[string]string) *e.Error {
 			ks := strings.Split(kt, "-")
 			if len(ks) != 2 {
 				err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
-				log.Debug(err.StackTrace())
+				l.Debug(err.StackTrace())
 				return err
 			}
-			conversion.Crop = utils.StringToBool(ks[1])
+			conversion.Crop = u.StringToBool(ks[1])
 
 			size := strings.Split(ks[0], "x")
-			conversion.Height = utils.StringToUint64(size[0])
-			conversion.Width = utils.StringToUint64(size[1])
+			conversion.Height = u.StringToUint64(size[0])
+			conversion.Width = u.StringToUint64(size[1])
 
 			vs := strings.Split(v, "-")
 			if len(vs) != 2 {
 				err := e.NewError(e.ValIdInvalid, "Failed to register a consumer.")
-				log.Debug(err.StackTrace())
+				l.Debug(err.StackTrace())
 				return err
 			}
 
 			cs, err := stringToConversionState(vs[0])
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-				log.Debug(err.StackTrace())
+				l.Debug(err.StackTrace())
 				return err
 			}
 			conversion.State = *cs
@@ -137,7 +137,7 @@ func (i *Image) MapToImage(valueMap map[string]string) *e.Error {
 			ce, err := stringToConversionExpires(vs[1])
 			if err != nil {
 				err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-				log.Debug(err.StackTrace())
+				l.Debug(err.StackTrace())
 				return err
 			}
 			conversion.Expires = ce
@@ -152,7 +152,7 @@ func (i *Image) JSON() ([]byte, *e.Error) {
 	j, err := json.Marshal(i)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, err
 	}
 	return j, nil
@@ -162,7 +162,7 @@ func (i *Image) JsonToImage(j []byte) *e.Error {
 	err := json.Unmarshal(j, i)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return err
 	}
 	return nil
@@ -177,7 +177,7 @@ func (i *Image) GetConversionBySize(width uint64, height uint64, crop bool) (*Co
 		}
 	}
 	err := e.NewError(e.ValIdInvalid, "No conversion found")
-	log.Debug(err.StackTrace())
+	l.Debug(err.StackTrace())
 	return nil, err
 }
 
@@ -185,7 +185,7 @@ func stringToConversionState(s string) (*ConversionState, *e.Error) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, err
 	}
 	cs := ConversionState(i)
@@ -196,7 +196,7 @@ func stringToConversionExpires(s string) (*time.Time, *e.Error) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, err
 	}
 	t := time.Unix(int64(i), 0)
