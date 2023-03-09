@@ -4,7 +4,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
 
-image: golang:1.18-alpine3.15
+image: golang:1.20-alpine3.17
 
 variables:
   # Please edit to your GitLab project
@@ -40,7 +40,7 @@ compile:
     - format
   script:
     - apk add --update --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/community --repository http://dl-3.alpinelinux.org/alpine/edge/main vips-dev
-    - apk add --no-cache git build-base
+    - apk add --no-cache git build-base pkgconfig
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
   artifacts:
