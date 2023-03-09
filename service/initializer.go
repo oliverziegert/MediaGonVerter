@@ -55,7 +55,7 @@ func (i *Initializer) GetConfig() *config.Config {
 // GetRabbitMQ returns an initialized RabbitMQ object.
 func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 	if i.mq == nil {
-		i.mq = mq.NewRabbtmq(i.conf)
+		i.mq = mq.NewRabbitMQ(i.conf)
 	}
 	return i.mq
 }
@@ -65,7 +65,7 @@ func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 // GetRedis returns an initialized Redis object.
 func (i *Initializer) GetRedis() *db.Redis {
 	if i.redis == nil {
-		i.redis = db.NewReddis(i.conf)
+		i.redis = db.NewRedis(i.conf)
 	}
 	return i.redis
 }

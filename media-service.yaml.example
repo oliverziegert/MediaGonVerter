@@ -28,8 +28,9 @@ http:
     all:
       enabled: true
 rabbitmq:
-  ip: localhost
-  port: 5672
+  hosts:
+    - ip: localhost
+      port: 5672
   username: guest
   password: guest
   virtual-host: /

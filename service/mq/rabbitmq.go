@@ -17,7 +17,7 @@ type RabbitMQ struct {
 	ch     *Channel
 }
 
-func NewRabbtmq(config *config.Config) *RabbitMQ {
+func NewRabbitMQ(config *config.Config) *RabbitMQ {
 	return &RabbitMQ{
 		config: config,
 		con:    nil,
@@ -26,15 +26,21 @@ func NewRabbtmq(config *config.Config) *RabbitMQ {
 }
 
 func (r *RabbitMQ) OpenRabbitmq() *e.Error {
-	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s",
-		r.config.RabbitMQ.Username,
-		r.config.RabbitMQ.Password,
-		r.config.RabbitMQ.IP,
-		r.config.RabbitMQ.Port,
-		r.config.RabbitMQ.VirtualHost)
-	con, err := Dial(url)
+	urls := make([]string, 0)
+
+	for _, host := range r.config.RabbitMQ.Hosts {
+		url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s",
+			r.config.RabbitMQ.Username,
+			r.config.RabbitMQ.Password,
+			host.IP,
+			host.Port,
+			r.config.RabbitMQ.VirtualHost)
+		urls = append(urls, url)
+	}
+
+	con, err := DialCluster(urls)
 	if err != nil {
-		err := e.WrapError(e.ValIdInvalid, "Failed to connect to RabbitMQ.", err)
+		err := e.WrapError(e.SysRabbitConnectionFailed, "Failed to connect to RabbitMQ.", err)
 		log.Debug(err.StackTrace())
 		return err
 	}

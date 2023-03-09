@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"pc-ziegert.de/media_service/common/config"
+	e "pc-ziegert.de/media_service/common/error"
 	"pc-ziegert.de/media_service/common/log"
 	"pc-ziegert.de/media_service/service/db/repo"
 )
@@ -17,8 +18,8 @@ type Redis struct {
 	tRepo *repo.TenantRepo
 }
 
-// NewReddis creates a new Reddis for the supplied configuration
-func NewReddis(config *config.Config) *Redis {
+// NewRedis creates a new Redis for the supplied configuration
+func NewRedis(config *config.Config) *Redis {
 	return &Redis{
 		config: config,
 		rdb:    nil,
@@ -53,6 +54,11 @@ func (r *Redis) NewClient() {
 		//Limiter:            nil,
 	}
 	r.rdb = redis.NewClient(options)
+	_, err := r.rdb.Ping(r.rdb.Context()).Result()
+	if err != nil {
+		err := e.WrapError(e.SysRedisConnectionFailed, "Failed to connect to Redis", err)
+		log.Fatal(err.StackTrace())
+	}
 }
 
 // ClosePool closes the underlying database.

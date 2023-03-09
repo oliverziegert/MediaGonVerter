@@ -49,7 +49,8 @@ const (
 	RabbitMQQueueMediaServiceName  = "pc-ziegert.mediaservice.mediaservice"
 	RabbitMQImageMessageType       = "mediaService.image"
 
-	S3KeyTemplate = "%d/%v/%v/imgcache/%019d-%dx%d-%t"
+	// S3KeyTemplate equals /media/customer_uuid/node_id % 10/node_id-width-height-crop
+	S3KeyTemplate = "/media/%s/%d/%d-%dx%d-%t"
 
 	JWTIssuer = "dracoon auth service"
 

@@ -31,7 +31,7 @@ func (c *Connection) Channel() (*Channel, error) {
 			// exit this goroutine if closed by developer
 			if !ok || channel.IsClosed() {
 				l.Debug("channel closed")
-				channel.Close() // close again, ensure closed flag set when connection closed
+				_ = channel.Close() // close again, ensure closed flag set when connection closed
 				break
 			}
 			l.Debugf("channel closed, reason: %v", reason)
@@ -57,33 +57,35 @@ func (c *Connection) Channel() (*Channel, error) {
 	return channel, nil
 }
 
-// Dial wrap amqp.Dial, dial and get a reconnect connection
-func Dial(url string) (*Connection, error) {
-	conn, err := amqp.Dial(url)
+// DialCluster with reconnect
+func DialCluster(urls []string) (*Connection, error) {
+	nodeSequence := 0
+	conn, err := amqp.Dial(urls[nodeSequence])
+
 	if err != nil {
 		return nil, err
 	}
-
 	connection := &Connection{
 		Connection: conn,
 	}
 
-	go func() {
+	go func(urls []string, seq *int) {
 		for {
 			reason, ok := <-connection.Connection.NotifyClose(make(chan *amqp.Error))
-			// exit this goroutine if closed by developer
 			if !ok {
 				l.Debug("connection closed")
 				break
 			}
 			l.Debugf("connection closed, reason: %v", reason)
 
-			// reconnect if not closed by developer
+			// reconnect with another node of cluster
 			for {
-				// wait 1s for reconnect
-				time.Sleep(delay * time.Second)
+				time.Sleep(time.Duration(delay) * time.Second)
 
-				conn, err := amqp.Dial(url)
+				newSeq := next(urls, *seq)
+				*seq = newSeq
+
+				conn, err := amqp.Dial(urls[newSeq])
 				if err == nil {
 					connection.Connection = conn
 					l.Debug("reconnect success")
@@ -93,12 +95,24 @@ func Dial(url string) (*Connection, error) {
 				l.Debugf("reconnect failed, err: %v", err)
 			}
 		}
-	}()
+	}(urls, &nodeSequence)
 
 	return connection, nil
 }
 
-// Channel amqp.Channel wapper
+// Next element index of slice
+func next(s []string, lastSeq int) int {
+	length := len(s)
+	if length == 0 || lastSeq == length-1 {
+		return 0
+	} else if lastSeq < length-1 {
+		return lastSeq + 1
+	} else {
+		return -1
+	}
+}
+
+// Channel amqp.Channel wrapper
 type Channel struct {
 	*amqp.Channel
 	closed int32
@@ -106,7 +120,7 @@ type Channel struct {
 
 // IsClosed indicate closed by developer
 func (ch *Channel) IsClosed() bool {
-	return (atomic.LoadInt32(&ch.closed) == 1)
+	return atomic.LoadInt32(&ch.closed) == 1
 }
 
 // Close ensure closed flag set

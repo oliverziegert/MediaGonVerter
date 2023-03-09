@@ -2,6 +2,7 @@ package s3
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -42,7 +43,11 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *c.Config, s3Config *m.S3C
 		UsePathStyle:     true,
 	})
 
-	cacheControl := fmt.Sprintf("max-age=%d", int(cfg.Data.ExpirationDuration.Seconds()))
+	// max-age: response can be used up to MAX-AGE, before it gets 'stale'
+	// private: only store in local cache. We use this as the images might be somewhat sensitive
+	// no-transform: do not convert the images in cache (e.g. to reduce size).
+	// stale-if-error: a stale object can be reused for X if a refresh attempt failed because of 5XX
+	cacheControl := fmt.Sprintf("private, no-transform, max-age=%d, stale-if-error=86400", int(cfg.Data.ExpirationDuration.Seconds()))
 	expires := time.Now().Add(cfg.Data.ExpirationDuration)
 	poi := &s3.PutObjectInput{
 		Bucket:       &s3Config.Bucket,
@@ -63,7 +68,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *c.Config, s3Config *m.S3C
 	return resp, &expires, nil
 }
 
-func GenerateS3PresignDownloadUrl(ctx *gin.Context, s3Config *m.S3Config, key string) (*v4.PresignedHTTPRequest, *e.Error) {
+func GenerateS3PresignedDownloadUrl(ctx *gin.Context, s3Config *m.S3Config, key string) (*v4.PresignedHTTPRequest, *e.Error) {
 
 	scp := credentials.NewStaticCredentialsProvider(s3Config.AccessKeyId, s3Config.SecretAccessKey, "")
 
@@ -73,6 +78,17 @@ func GenerateS3PresignDownloadUrl(ctx *gin.Context, s3Config *m.S3Config, key st
 		EndpointResolver: s3.EndpointResolverFromURL(s3Config.Address),
 		UsePathStyle:     true,
 	})
+
+	// 'refresh' timestamp so that the file expiration gets reset
+	coi := s3.CopyObjectInput{
+		Bucket:     &s3Config.Bucket,
+		CopySource: aws.String(fmt.Sprintf("%s/%s", s3Config.Bucket, key)),
+		Key:        &key,
+	}
+
+	if _, err := client.CopyObject(ctx, &coi); err != nil {
+		l.Infof("could not refresh %s/%s: %v", s3Config.Bucket, key, err)
+	}
 
 	goi := &s3.GetObjectInput{
 		Bucket: &s3Config.Bucket,

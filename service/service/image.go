@@ -3,6 +3,9 @@ package service
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"pc-ziegert.de/media_service/common/config"
@@ -16,8 +19,6 @@ import (
 	"pc-ziegert.de/media_service/service/s3"
 	repoS3 "pc-ziegert.de/media_service/service/s3/repo"
 	"pc-ziegert.de/media_service/service/utils"
-	"strings"
-	"time"
 )
 
 // ImageService contains image related logic.
@@ -254,9 +255,8 @@ func (i *ImageService) generateS3UploadUrls(ctx *gin.Context, image *m.Image) *e
 	for _, conversion := range image.Conversions {
 		if conversion.State != m.ConversionStateCached {
 			key := fmt.Sprintf(constant.S3KeyTemplate,
-				image.NodeId%10,
-				cc.TenantUuid,
 				cc.CustomerUuid,
+				image.NodeId%10,
 				image.NodeId,
 				conversion.Width,
 				conversion.Height,
@@ -298,14 +298,13 @@ func (i *ImageService) GenerateS3DownloadUrl(ctx *gin.Context, image *m.Image, c
 		return "", err
 	}
 	key := fmt.Sprintf(constant.S3KeyTemplate,
-		image.NodeId%10,
-		cc.TenantUuid,
 		cc.CustomerUuid,
+		image.NodeId%10,
 		image.NodeId,
 		conversion.Width,
 		conversion.Height,
 		conversion.Crop)
-	req, err := s3.GenerateS3PresignDownloadUrl(ctx, s3Config, key)
+	req, err := s3.GenerateS3PresignedDownloadUrl(ctx, s3Config, key)
 
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
