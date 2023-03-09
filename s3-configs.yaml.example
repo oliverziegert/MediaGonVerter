@@ -1,0 +1,15 @@
+#########################################
+# possible location:                    #
+#   - /etc/pc-ziegert/s3-configs.yaml   #
+#   - $HOME/.pc-ziegert/s3-configs.yaml #
+#   - config/s3-configs.yaml            #
+#########################################
+---
+- access-key-id: minioadmin
+  address: http://localhost:9000
+  bucket: test1
+  region: eu-central-1
+  secret-access-key: minioadmin
+  hostnames:
+    - localhost
+    - localhost:8080
