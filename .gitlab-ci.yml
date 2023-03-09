@@ -4,7 +4,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
 
-image: golang:1.20
+image: golang:1.20-alpine3.17
 
 variables:
   # Please edit to your GitLab project
@@ -29,6 +29,7 @@ stages:
 format:
   stage: test
   script:
+    - apk add --no-cache git build-base
     - go fmt $(go list ./... | grep -v /vendor/)
     #- go vet $(go list ./... | grep -v /vendor/)
     #- go test -race $(go list ./... | grep -v /vendor/)
@@ -38,12 +39,7 @@ compile:
   needs:
     - format
   script:
-    - apt update
-    - apt install -y software-properties-common
-    - add-apt-repository -y ppa:strukturag/libde265
-    - add-apt-repository -y ppa:strukturag/libheif
-    - add-apt-repository -y ppa:tonimelisma/ppa
-    - apt -y install libvips-dev
+    - apk add --no-cache git build-base libvips-dev
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
   artifacts:
