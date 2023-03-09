@@ -67,3 +67,11 @@ func GetConfigFilePaths() []string {
 		"config/media-service.yaml",
 	}
 }
+
+func GetS3ConfigFilePaths() []string {
+	return []string{
+		"/etc/pc-ziegert/s3-configs.yaml",
+		fmt.Sprintf("%s/.pc-ziegert/s3-configs.yaml", os.Getenv("HOME")),
+		"config/s3-configs.yaml",
+	}
+}

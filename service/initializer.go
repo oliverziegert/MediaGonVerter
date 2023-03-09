@@ -7,6 +7,7 @@ import (
 	am "pc-ziegert.de/media_service/service/api/middleware"
 	"pc-ziegert.de/media_service/service/db"
 	"pc-ziegert.de/media_service/service/mq"
+	"pc-ziegert.de/media_service/service/s3"
 	"pc-ziegert.de/media_service/service/service"
 	"time"
 )
@@ -17,6 +18,7 @@ type Initializer struct {
 
 	mq    *mq.RabbitMQ
 	redis *db.Redis
+	s3    *s3.S3
 
 	jobServ *service.JobService
 	imgServ *service.ImageService
@@ -68,6 +70,16 @@ func (i *Initializer) GetRedis() *db.Redis {
 	return i.redis
 }
 
+// --- S3 functions ---
+
+// GetS3 returns an initialized S3 object.
+func (i *Initializer) GetS3() *s3.S3 {
+	if i.s3 == nil {
+		i.s3 = s3.NewS3()
+	}
+	return i.s3
+}
+
 // --- Service functions ---
 
 // GetJobService returns an initialized job service object
@@ -84,6 +96,7 @@ func (i *Initializer) GetImageService() *service.ImageService {
 		i.imgServ = service.NewImageService(
 			i.conf,
 			i.GetRedis().GetImageRepo(),
+			i.GetS3().GetS3ConfigRepo(),
 			i.mq)
 	}
 	return i.imgServ
