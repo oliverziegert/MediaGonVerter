@@ -53,7 +53,7 @@ func (i *Initializer) GetConfig() *config.Config {
 // GetRabbitMQ returns an initialized RabbitMQ object.
 func (i *Initializer) GetRabbitMQ() *mq.RabbitMQ {
 	if i.mq == nil {
-		i.mq = mq.NewRabbtmq(i.conf)
+		i.mq = mq.NewRabbitMQ(i.conf)
 	}
 	return i.mq
 }

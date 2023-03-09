@@ -2,7 +2,6 @@ package config
 
 import (
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
 	"pc-ziegert.de/media_service/common/constant"
 	e "pc-ziegert.de/media_service/common/error"
@@ -51,11 +50,13 @@ type Config struct {
 	} `yaml:"http"`
 
 	RabbitMQ struct {
-		IP          string `yaml:"ip"`
-		Port        uint16 `yaml:"port"`
 		Username    string `yaml:"username"`
 		Password    string `yaml:"password"`
 		VirtualHost string `yaml:"virtual-host"`
+		Hosts       []struct {
+			IP   string `yaml:"ip"`
+			Port uint16 `yaml:"port"`
+		} `yaml:"hosts"`
 	} `yaml:"rabbitmq"`
 
 	Redis struct {
@@ -112,7 +113,7 @@ func LoadConfig() *Config {
 }
 
 func readFile(conf *Config, filename string) {
-	buf, err := ioutil.ReadFile(filename)
+	buf, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("Config file missing! %s", err)
 	}

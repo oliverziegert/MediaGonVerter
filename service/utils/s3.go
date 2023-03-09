@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"pc-ziegert.de/media_service/common/config"
 	e "pc-ziegert.de/media_service/common/error"
-	"pc-ziegert.de/media_service/common/log"
+	l "pc-ziegert.de/media_service/common/log"
 	"time"
 )
 
@@ -43,7 +43,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 	resp, err := psClient.PresignPutObject(ctx, poi)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, nil, err
 	}
 	return resp, &expires, nil
@@ -69,7 +69,7 @@ func GenerateS3PresignedDownloadUrl(ctx *gin.Context, cfg *config.Config, key st
 	}
 
 	if _, err := client.CopyObject(ctx, &coi); err != nil {
-		log.Infof("could not refresh %s/%s: %v", bucket, key, err)
+		l.Infof("could not refresh %s/%s: %v", bucket, key, err)
 	}
 
 	goi := &s3.GetObjectInput{
@@ -82,7 +82,7 @@ func GenerateS3PresignedDownloadUrl(ctx *gin.Context, cfg *config.Config, key st
 	resp, err := psClient.PresignGetObject(ctx, goi)
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)
-		log.Debug(err.StackTrace())
+		l.Debug(err.StackTrace())
 		return nil, err
 	}
 	return resp, nil
