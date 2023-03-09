@@ -39,6 +39,10 @@ compile:
   needs:
     - format
   script:
+    - add-apt-repository -y ppa:strukturag/libde265
+    - add-apt-repository -y ppa:strukturag/libheif
+    - add-apt-repository ppa:tonimelisma/ppa
+    - apt -y install libvips-dev
     - apk add --no-cache git build-base
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
