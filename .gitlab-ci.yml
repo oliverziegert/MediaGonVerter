@@ -38,10 +38,11 @@ compile:
   needs:
     - format
   script:
-    - apt install software-properties-common
+    - apt update
+    - apt install -y software-properties-common
     - add-apt-repository -y ppa:strukturag/libde265
     - add-apt-repository -y ppa:strukturag/libheif
-    - add-apt-repository ppa:tonimelisma/ppa
+    - add-apt-repository -y ppa:tonimelisma/ppa
     - apt -y install libvips-dev
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-service $CI_PROJECT_DIR/media_service.go
     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/media-worker $CI_PROJECT_DIR/worker.go
