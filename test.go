@@ -22,7 +22,7 @@ func main() {
 	download_key := "0/" + fileName + "." + fileExtension
 	upload_key := "media/" + fileName + ".jpg"
 
-	s3Download, _ := utils.GenerateS3PresignDownloadUrl(ctx, conf, download_key, "application/json")
+	s3Download, _ := utils.GenerateS3PresignedDownloadUrl(ctx, conf, download_key, "application/json")
 	s3Upload, _, _ := utils.GenerateS3PresignUploadUrl(ctx, conf, upload_key, "application/json")
 
 	img.S3DownloadUrl = s3Download.URL

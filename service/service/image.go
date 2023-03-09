@@ -291,7 +291,7 @@ func (i *ImageService) GenerateS3DownloadUrl(ctx *gin.Context, image *m.Image, c
 		conversion.Width,
 		conversion.Height,
 		conversion.Crop)
-	req, err := utils.GenerateS3PresignDownloadUrl(ctx, i.conf, key, image.NodeType)
+	req, err := utils.GenerateS3PresignedDownloadUrl(ctx, i.conf, key, image.NodeType)
 
 	if err != nil {
 		err := e.WrapError(e.ValIdInvalid, "Failed to register a consumer.", err)

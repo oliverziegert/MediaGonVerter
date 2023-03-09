@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -23,7 +24,11 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 		UsePathStyle:     true,
 	})
 
-	cacheControl := fmt.Sprintf("max-age=%d", int(cfg.Data.ExpirationDuration.Seconds()))
+	// max-age: response can be used up to MAX-AGE, before it gets 'stale'
+	// private: only store in local cache. We use this as the images might be somewhat sensitive
+	// no-transform: do not convert the images in cache (e.g. to reduce size).
+	// stale-if-error: a stale object can be reused for X if a refresh attempt failed because of 5XX
+	cacheControl := fmt.Sprintf("private, no-transform, max-age=%d, stale-if-error=86400", int(cfg.Data.ExpirationDuration.Seconds()))
 	expires := time.Now().Add(cfg.Data.ExpirationDuration)
 	poi := &s3.PutObjectInput{
 		Bucket:       &cfg.Data.S3.Bucket,
@@ -44,8 +49,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *config.Config, key string
 	return resp, &expires, nil
 }
 
-func GenerateS3PresignDownloadUrl(ctx *gin.Context, cfg *config.Config, key string, contentType string) (*v4.PresignedHTTPRequest, *e.Error) {
-
+func GenerateS3PresignedDownloadUrl(ctx *gin.Context, cfg *config.Config, key string, contentType string) (*v4.PresignedHTTPRequest, *e.Error) {
 	scp := credentials.NewStaticCredentialsProvider(cfg.Data.S3.AccessKeyId, cfg.Data.S3.SecretAccessKey, "")
 
 	client := s3.New(s3.Options{
@@ -54,6 +58,19 @@ func GenerateS3PresignDownloadUrl(ctx *gin.Context, cfg *config.Config, key stri
 		EndpointResolver: s3.EndpointResolverFromURL(cfg.Data.S3.Address),
 		UsePathStyle:     true,
 	})
+
+	bucket := cfg.Data.S3.Bucket
+
+	// 'refresh' timestamp so that the file expiration gets reset
+	coi := s3.CopyObjectInput{
+		Bucket:     &cfg.Data.S3.Bucket,
+		CopySource: aws.String(fmt.Sprintf("%s/%s", bucket, key)),
+		Key:        &key,
+	}
+
+	if _, err := client.CopyObject(ctx, &coi); err != nil {
+		log.Infof("could not refresh %s/%s: %v", bucket, key, err)
+	}
 
 	goi := &s3.GetObjectInput{
 		Bucket: &cfg.Data.S3.Bucket,
