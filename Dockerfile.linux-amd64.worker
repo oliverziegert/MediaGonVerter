@@ -16,7 +16,7 @@ ARG PC_ZIEGERT_GROUP_GID=7003
 ARG PC_ZIEGERT_GROUP_NAME=pc-media-worker
 ARG PC_ZIEGERT_SERVICE_CONFIG_DIRECTORY=/etc/pc-ziegert
 
-RUN apk --no-cache add ca-certificates vips vips-dev && \
+RUN apk --no-cache add ca-certificates vips vips-dev vips-cpp && \
     addgroup -g ${PC_ZIEGERT_GROUP_GID} ${PC_ZIEGERT_GROUP_NAME} && \
     adduser -H -D -s /bin/nologin -G ${PC_ZIEGERT_GROUP_NAME} -u ${PC_ZIEGERT_USER_UID} -h ${PC_ZIEGERT_WORKING_DIRECTORY} ${PC_ZIEGERT_USER_NAME} && \
     mkdir -p ${PC_ZIEGERT_SERVICE_CONFIG_DIRECTORY} ${PC_ZIEGERT_WORKING_DIRECTORY} && \
