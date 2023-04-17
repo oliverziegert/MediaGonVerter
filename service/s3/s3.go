@@ -40,7 +40,7 @@ func GenerateS3PresignUploadUrl(ctx *gin.Context, cfg *c.Config, s3Config *m.S3C
 		Credentials:      scp,
 		Region:           s3Config.Region,
 		EndpointResolver: s3.EndpointResolverFromURL(s3Config.Address),
-		UsePathStyle:     true,
+		UsePathStyle:     false,
 	})
 
 	// max-age: response can be used up to MAX-AGE, before it gets 'stale'
@@ -76,7 +76,7 @@ func GenerateS3PresignedDownloadUrl(ctx *gin.Context, s3Config *m.S3Config, key 
 		Credentials:      scp,
 		Region:           s3Config.Region,
 		EndpointResolver: s3.EndpointResolverFromURL(s3Config.Address),
-		UsePathStyle:     true,
+		UsePathStyle:     false,
 	})
 
 	// 'refresh' timestamp so that the file expiration gets reset
